@@ -11,9 +11,11 @@ import java.util.*;
 public class Server {
     public static final int PORT = 12345;
     private final Set<UserThread> users;
+    private final Map<Lobby, Set<UserThread>> lobbies;
 
     public Server() {
         this.users = Collections.synchronizedSet(new HashSet<>());
+        this.lobbies = Collections.synchronizedMap(new HashMap<>());
     }
 
     public static void main(String[] args) {
@@ -40,6 +42,10 @@ public class Server {
         return users.stream().noneMatch(user -> user.getUsername().equals(username));
     }
 
+    public boolean isLobbyNameAvailable(String lobbyName) {
+        return lobbies.entrySet().stream().noneMatch(lobby -> lobby.getKey().getLobbyName().equals(lobbyName));
+    }
+
     public void addNewUser(UserThread user) {
         users.add(user);
     }
@@ -48,10 +54,21 @@ public class Server {
         users.remove(user);
     }
 
+    public void addNewLobby(Lobby lobby) {
+        lobbies.put(lobby, new HashSet<>());
+    }
+
 
     public String getConnectedUsers() {
         synchronized (users) {
             return "Online users: " + users.stream().map(UserThread::getUsername).toList();
+        }
+    }
+
+    public String getLobbies() {
+        synchronized (lobbies) {
+            return lobbies.isEmpty() ?
+                    "There are currently no active game lobbies. Please create a new lobby to start a game." : lobbies.toString();
         }
     }
 
