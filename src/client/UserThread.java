@@ -35,20 +35,37 @@ public class UserThread extends Thread {
             if (!server.isUsernameAvailable(username))
                 toUser.println("Username " + username + " is taken! Try again.");
             else {
-                toUser.println("Welcome " + username + "!");
+                sendMessage("Welcome " + username + "! Type \"help\" for more info!");
                 server.addNewUser(this);
-                server.broadcastToAll(this, "New user connected " + username);
-                sendMessage(server.getConnectedUsers(this));
+                server.broadcastToAll(this, "User " + username + " connected!");
 
                 String userInput;
                 do {
                     userInput = fromUser.readLine();
+
+                    switch (userInput) {
+                        case "help":
+                            sendMessage(server.listCommands());
+                            break;
+                        case "view_users":
+                            sendMessage(server.getConnectedUsers());
+                            break;
+                    }
+
                 } while (!userInput.equals("exit"));
 
                 server.broadcastToAll(this, "User " + username + " disconnected!");
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            server.removeUser(this);
+
+            try {
+                socket.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

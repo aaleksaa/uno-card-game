@@ -20,7 +20,6 @@ public class Client {
 
     public static void main(String[] args) {
         Client client = new Client("localhost");
-        System.out.println("Connecting to the port " + Server.PORT);
         client.execute();
     }
 
@@ -38,6 +37,7 @@ public class Client {
             String response = input.readLine();
 
             if (response.startsWith("W")) {
+                System.out.println(response);
                 Thread rt = new ClientReadThread(username, clientSocket);
                 Thread wt = new ClientWriteThread(username, clientSocket);
 
