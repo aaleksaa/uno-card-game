@@ -72,6 +72,8 @@ public class UserThread extends Thread {
                             break;
                         case "accept":
                             acceptInviteHandler(parts[1]);
+                        case "join":
+                            joinLobbyHandler(parts[1]);
                             break;
                     }
 
@@ -90,10 +92,6 @@ public class UserThread extends Thread {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    public Lobby getLobby() {
-        return lobby;
     }
 
     private void createLobbyHandler(String lobbyName) {
@@ -131,6 +129,23 @@ public class UserThread extends Thread {
             this.lobby = lobby;
             sendMessage("You joined " + lobbyName);
             server.broadcastToLobby(this, lobby, this.username + " joined!");
+        }
+    }
+
+    private void joinLobbyHandler(String lobbyName) {
+        Lobby lobby = server.getLobbyByName(lobbyName);
+
+        if (lobby == null)
+            sendMessage("Lobby " + lobbyName + " does not exist!");
+        else {
+            if (lobby.isPrivateLobby())
+                sendMessage("You can't join private lobby!");
+            else {
+                lobby.addPlayer(this);
+                this.lobby = lobby;
+                sendMessage("You joined " + lobbyName);
+                server.broadcastToLobby(this, lobby, this.username + " joined!");
+            }
         }
     }
 
