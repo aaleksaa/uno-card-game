@@ -70,6 +70,9 @@ public class UserThread extends Thread {
                         case "invite":
                             invitePlayerHandler(parts[1]);
                             break;
+                        case "accept":
+                            acceptInviteHandler(parts[1]);
+                            break;
                     }
 
                 } while (!userInput.equals("exit"));
@@ -89,8 +92,8 @@ public class UserThread extends Thread {
         }
     }
 
-    public BufferedReader getFromUser() {
-        return fromUser;
+    public Lobby getLobby() {
+        return lobby;
     }
 
     private void createLobbyHandler(String lobbyName) {
@@ -104,10 +107,6 @@ public class UserThread extends Thread {
         }
     }
 
-    public String readMessage() throws IOException {
-        return fromUser.readLine();
-    }
-
     private void invitePlayerHandler(String username) throws IOException{
         if (!server.isAdmin(this.username))
             sendMessage("You can't send an invite!");
@@ -116,19 +115,22 @@ public class UserThread extends Thread {
 
             if (user != null) {
                 server.broadcast(user, this.username + " has sent you an invite! Type accept/decline " + lobby.getLobbyName() + ".");
-
-//                server.broadcast(this, user.readMessage());
-                String response = user.readMessage();
-                sendMessage(response);
-                if (response.equals("accept " + lobby.getLobbyName())) {
-                    lobby.addPlayer(user);
-                    sendMessage(username + " joined lobby!");
-                    server.broadcast(user, "You joined " + lobby.getLobbyName());
-                } else
-                    sendMessage(username + " declined invite!");
+                user.hasInvite = true;
             }
             else
                 sendMessage(username + " is offline!");
+        }
+    }
+
+    private void acceptInviteHandler(String lobbyName) {
+        if (!hasInvite)
+            sendMessage("You don't have any invites!");
+        else {
+            Lobby lobby = server.getLobbyByName(lobbyName);
+            lobby.addPlayer(this);
+            this.lobby = lobby;
+            sendMessage("You joined " + lobbyName);
+            server.broadcastToLobby(this, lobby, this.username + " joined!");
         }
     }
 

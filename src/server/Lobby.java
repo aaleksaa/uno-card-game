@@ -29,6 +29,10 @@ public class Lobby {
         return admin;
     }
 
+    public Set<UserThread> getPlayers() {
+        return players;
+    }
+
     public void addPlayer(UserThread user) {
         players.add(user);
     }

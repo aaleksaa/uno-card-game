@@ -77,6 +77,13 @@ public class Server {
         return false;
     }
 
+    public Lobby getLobbyByName(String lobbyName) {
+        for (Lobby lobby : lobbies)
+            if (lobby.getLobbyName().equals(lobbyName))
+                return lobby;
+        return null;
+    }
+
     public String getLobbies() {
         synchronized (lobbies) {
             return lobbies.isEmpty() ?
@@ -87,6 +94,12 @@ public class Server {
     public void broadcastToAll(UserThread sender, String message) {
         synchronized (users) {
             users.stream().filter(user -> user != sender).forEach(user -> user.sendMessage(message));
+        }
+    }
+
+    public void broadcastToLobby(UserThread sender, Lobby lobby,String message) {
+        synchronized (lobby.getPlayers()) {
+            lobby.getPlayers().stream().filter(player -> player != sender).forEach(player -> player.sendMessage(message));
         }
     }
 
