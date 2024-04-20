@@ -57,6 +57,10 @@ public class Server {
         lobbies.add(lobby);
     }
 
+    public void removeLobby(Lobby lobby) {
+        lobbies.remove(lobby);
+    }
+
     public String getConnectedUsers() {
         synchronized (users) {
             return "Online users: " + users.stream().map(UserThread::getUsername).toList();
@@ -107,6 +111,22 @@ public class Server {
         receiver.sendMessage(message);
     }
 
+    public String listLobbyCommands() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("----------------------------------------------\n");
+        sb.append("options    List commands\n");
+        sb.append("set_public              \tSet your lobby to public\n");
+        sb.append("set_private             \tSet your lobby to private\n");
+        sb.append("invite <username>        \tSend request\n");
+        sb.append("ready                   \tReady for game\n");
+        sb.append("leave              \tLeave lobby\n");
+        sb.append("----------------------------------------------");
+
+
+        return sb.toString();
+    }
+
     public String listCommands() {
         StringBuilder sb = new StringBuilder();
 
@@ -115,9 +135,9 @@ public class Server {
         sb.append("view_users       \t\t\tView online users\n");
         sb.append("view_lobbies     \t\t\tView current lobies\n");
         sb.append("create_lobby <lobby name> \tCreate lobby\n");
-        sb.append("invite <username>        \tSend request\n");
-        sb.append("set_private             \tSet your lobby to private\n");
-        sb.append("set_public              \tSet your lobby to public\n");
+//        sb.append("invite <username>        \tSend request\n");
+//        sb.append("set_private             \tSet your lobby to private\n");
+//        sb.append("set_public              \tSet your lobby to public\n");
         sb.append("accept                  \tAccept request\n");
         sb.append("decline                 \tDecline request\n");
         sb.append("join <lobby name>       \tJoin lobby\n");

@@ -17,6 +17,7 @@ public class UserThread extends Thread {
     private PrintWriter toUser;
     private Lobby lobby;
     private boolean hasInvite;
+    private boolean inLobby;
     private boolean ingame;
 
     public UserThread(Socket socket, Server server) throws IOException {
@@ -46,37 +47,7 @@ public class UserThread extends Thread {
                 String userInput;
                 do {
                     userInput = fromUser.readLine();
-                    String[] parts = userInput.split(" ");
-
-                    switch (parts[0]) {
-                        case "help":
-                            sendMessage(server.listCommands());
-                            break;
-                        case "view_users":
-                            sendMessage(server.getConnectedUsers());
-                            break;
-                        case "view_lobbies":
-                            sendMessage(server.getLobbies());
-                            break;
-                        case "create_lobby":
-                            createLobbyHandler(parts[1]);
-                            break;
-                        case "set_public":
-                            lobby.setPrivateLobby(false);
-                            break;
-                        case "set_private":
-                            lobby.setPrivateLobby(true);
-                            break;
-                        case "invite":
-                            invitePlayerHandler(parts[1]);
-                            break;
-                        case "accept":
-                            acceptInviteHandler(parts[1]);
-                        case "join":
-                            joinLobbyHandler(parts[1]);
-                            break;
-                    }
-
+                    executeCommand(userInput);
                 } while (!userInput.equals("exit"));
 
                 server.broadcastToAll(this, "User " + username + " disconnected!");
@@ -94,18 +65,61 @@ public class UserThread extends Thread {
         }
     }
 
+    private void executeCommand(String command) throws IOException {
+        String[] parts = command.split(" ");
+
+        switch (parts[0]) {
+            case "help":
+                sendMessage(server.listCommands());
+                break;
+            case "options":
+                sendMessage(server.listLobbyCommands());
+                break;
+            case "view_users":
+                sendMessage(server.getConnectedUsers());
+                break;
+            case "view_lobbies":
+                sendMessage(server.getLobbies());
+                break;
+            case "create_lobby":
+                createLobbyHandler(parts[1]);
+                break;
+            case "set_public":
+                lobby.setPrivateLobby(false);
+                break;
+            case "set_private":
+                lobby.setPrivateLobby(true);
+                break;
+            case "invite":
+                invitePlayerHandler(parts[1]);
+                break;
+            case "accept":
+                acceptInviteHandler(parts[1]);
+                break;
+            case "decline":
+                declineInviteHandler(parts[1]);
+                break;
+            case "join":
+                joinLobbyHandler(parts[1]);
+                break;
+            case "leave":
+                leaveLobbyHandler();
+                break;
+        }
+    }
+
     private void createLobbyHandler(String lobbyName) {
         if (!server.isLobbyNameAvailable(lobbyName))
             sendMessage("Lobby with " + lobbyName + " already exists!");
         else {
-            sendMessage("Lobby successfully created!");
+            sendMessage("Lobby successfully created! Type \"options\" for info!");
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
             server.broadcastToAll(this, username + " created new lobby!");
         }
     }
 
-    private void invitePlayerHandler(String username) throws IOException{
+    private void invitePlayerHandler(String username) throws IOException {
         if (!server.isAdmin(this.username))
             sendMessage("You can't send an invite!");
         else {
@@ -127,9 +141,19 @@ public class UserThread extends Thread {
             Lobby lobby = server.getLobbyByName(lobbyName);
             lobby.addPlayer(this);
             this.lobby = lobby;
-            sendMessage("You joined " + lobbyName);
+            sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
             server.broadcastToLobby(this, lobby, this.username + " joined!");
         }
+    }
+
+    private void declineInviteHandler(String lobbyName) {
+        if (!hasInvite)
+            sendMessage("You don't have any invites!");
+        else {
+            UserThread user = server.getLobbyByName(lobbyName).getAdmin();
+            server.broadcast(user, username + " declined your invite!");
+        }
+
     }
 
     private void joinLobbyHandler(String lobbyName) {
@@ -143,10 +167,19 @@ public class UserThread extends Thread {
             else {
                 lobby.addPlayer(this);
                 this.lobby = lobby;
-                sendMessage("You joined " + lobbyName);
+                sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
                 server.broadcastToLobby(this, lobby, this.username + " joined!");
             }
         }
+    }
+
+    private void leaveLobbyHandler() {
+        lobby.removePlayer(this);
+        sendMessage("You left " + lobby.getLobbyName());
+        if (lobby.isEmpty())
+            server.removeLobby(lobby);
+        else
+            server.broadcastToLobby(this, lobby, username + " left lobby!");
     }
 
     public String getUsername() {

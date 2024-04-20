@@ -37,19 +37,27 @@ public class Lobby {
         players.add(user);
     }
 
+    public void removePlayer(UserThread user) {
+        players.remove(user);
+    }
+
     public boolean isPrivateLobby() {
         return privateLobby;
+    }
+
+    public boolean isEmpty() {
+        return players.isEmpty();
     }
 
     public void setPrivateLobby(boolean privateLobby) {
         this.privateLobby = privateLobby;
     }
 
-   private String privateLobbyInfo() {
+    private String privateLobbyInfo() {
         return "Private - " + lobbyName;
    }
 
-   private String publicLobbyInfo() {
+    private String publicLobbyInfo() {
         return "Public - " + lobbyName + " Players: " + players;
    }
 
