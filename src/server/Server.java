@@ -2,7 +2,6 @@ package server;
 
 import client.UserThread;
 
-import javax.print.DocFlavor;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,11 +10,11 @@ import java.util.*;
 public class Server {
     public static final int PORT = 12345;
     private final Set<UserThread> users;
-    private final Map<Lobby, Set<UserThread>> lobbies;
+    private final Set<Lobby> lobbies;
 
     public Server() {
         this.users = Collections.synchronizedSet(new HashSet<>());
-        this.lobbies = Collections.synchronizedMap(new HashMap<>());
+        this.lobbies = Collections.synchronizedSet(new HashSet<>());
     }
 
     public static void main(String[] args) {
@@ -43,7 +42,7 @@ public class Server {
     }
 
     public boolean isLobbyNameAvailable(String lobbyName) {
-        return lobbies.entrySet().stream().noneMatch(lobby -> lobby.getKey().getLobbyName().equals(lobbyName));
+        return lobbies.stream().noneMatch(lobby -> lobby.getLobbyName().equals(lobbyName));
     }
 
     public void addNewUser(UserThread user) {
@@ -55,14 +54,27 @@ public class Server {
     }
 
     public void addNewLobby(Lobby lobby) {
-        lobbies.put(lobby, new HashSet<>());
+        lobbies.add(lobby);
     }
-
 
     public String getConnectedUsers() {
         synchronized (users) {
             return "Online users: " + users.stream().map(UserThread::getUsername).toList();
         }
+    }
+
+    public UserThread getUserByUsername(String username) {
+        for (UserThread user : users)
+            if (user.getUsername().equals(username))
+                return user;
+        return null;
+    }
+
+    public boolean isAdmin(String username) {
+        for (Lobby lobby : lobbies)
+            if (lobby.getAdmin().getUsername().equals(username))
+                return true;
+        return false;
     }
 
     public String getLobbies() {
@@ -72,11 +84,14 @@ public class Server {
         }
     }
 
-
     public void broadcastToAll(UserThread sender, String message) {
         synchronized (users) {
             users.stream().filter(user -> user != sender).forEach(user -> user.sendMessage(message));
         }
+    }
+
+    public void broadcast(UserThread receiver, String message) {
+        receiver.sendMessage(message);
     }
 
     public String listCommands() {

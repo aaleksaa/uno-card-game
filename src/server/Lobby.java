@@ -25,6 +25,14 @@ public class Lobby {
         return lobbyName;
     }
 
+    public UserThread getAdmin() {
+        return admin;
+    }
+
+    public void addPlayer(UserThread user) {
+        players.add(user);
+    }
+
     public boolean isPrivateLobby() {
         return privateLobby;
     }
