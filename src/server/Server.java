@@ -135,9 +135,6 @@ public class Server {
         sb.append("view_users       \t\t\tView online users\n");
         sb.append("view_lobbies     \t\t\tView current lobies\n");
         sb.append("create_lobby <lobby name> \tCreate lobby\n");
-//        sb.append("invite <username>        \tSend request\n");
-//        sb.append("set_private             \tSet your lobby to private\n");
-//        sb.append("set_public              \tSet your lobby to public\n");
         sb.append("accept                  \tAccept request\n");
         sb.append("decline                 \tDecline request\n");
         sb.append("join <lobby name>       \tJoin lobby\n");

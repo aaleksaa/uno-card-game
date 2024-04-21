@@ -120,18 +120,15 @@ public class UserThread extends Thread {
     }
 
     private void invitePlayerHandler(String username) throws IOException {
-        if (!server.isAdmin(this.username))
-            sendMessage("You can't send an invite!");
-        else {
-            UserThread user = server.getUserByUsername(username);
+        UserThread user = server.getUserByUsername(username);
 
-            if (user != null) {
-                server.broadcast(user, this.username + " has sent you an invite! Type accept/decline " + lobby.getLobbyName() + ".");
-                user.hasInvite = true;
-            }
-            else
-                sendMessage(username + " is offline!");
+        if (user != null) {
+            server.broadcast(user, this.username + " has sent you an invite! Type accept/decline " + lobby.getLobbyName() + ".");
+            user.hasInvite = true;
         }
+        else
+            sendMessage(username + " is offline!");
+
     }
 
     private void acceptInviteHandler(String lobbyName) {
@@ -141,6 +138,7 @@ public class UserThread extends Thread {
             Lobby lobby = server.getLobbyByName(lobbyName);
             lobby.addPlayer(this);
             this.lobby = lobby;
+
             sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
             server.broadcastToLobby(this, lobby, this.username + " joined!");
         }
@@ -149,10 +147,8 @@ public class UserThread extends Thread {
     private void declineInviteHandler(String lobbyName) {
         if (!hasInvite)
             sendMessage("You don't have any invites!");
-        else {
-            UserThread user = server.getLobbyByName(lobbyName).getAdmin();
-            server.broadcast(user, username + " declined your invite!");
-        }
+        else
+            server.broadcastToLobby(this, server.getLobbyByName(lobbyName),username + " declined invite!");
 
     }
 
