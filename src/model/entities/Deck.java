@@ -2,7 +2,7 @@ package model.entities;
 
 import model.enums.Action;
 import model.enums.Color;
-import model.enums.SpecialAction;
+import model.enums.WildAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +17,7 @@ public class Deck {
     }
 
     private void init() {
-        addSpecialCards();
+        addWildCard();
 
         addActionCards(Color.RED);
         addActionCards(Color.YELLOW);
@@ -30,18 +30,22 @@ public class Deck {
         addNumberCards(Color.GREEN);
     }
 
-    private void addCardToDeck(Card card) {
+    public void addCardToDeck(Card card) {
         cards.add(card);
     }
 
-    private void removeCardFromDeck(Card card) {
-        cards.remove(card);
+    public void removeCardFromDeck() {
+        cards.remove(0);
     }
 
-    private void addSpecialCards() {
+    public Card dealCard() {
+        return cards.get(0);
+    }
+
+    private void addWildCard() {
         for (int i = 0; i < 4; i++) {
-            addCardToDeck(new SpecialCard(SpecialAction.DRAW_FOUR));
-            addCardToDeck(new SpecialCard(SpecialAction.CHANGE_COLOR));
+            addCardToDeck(new WildCard(WildAction.DRAW_FOUR));
+            addCardToDeck(new WildCard(WildAction.CHANGE_COLOR));
         }
     }
 

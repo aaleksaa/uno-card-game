@@ -5,7 +5,7 @@ public enum Color {
     BLUE("Blue"),
     GREEN("Green"),
     YELLOW("Yellow"),
-    SPECIAL("Special");
+    WILD("Wild");
 
     private final String color;
 
@@ -19,7 +19,7 @@ public enum Color {
             case "Blue" -> BLUE;
             case "Green" -> GREEN;
             case "Yellow" -> YELLOW;
-            case "Special" -> SPECIAL;
+            case "Wild" -> WILD;
             default -> null;
         };
     }

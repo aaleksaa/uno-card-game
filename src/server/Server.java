@@ -101,9 +101,15 @@ public class Server {
         }
     }
 
-    public void broadcastToLobby(UserThread sender, Lobby lobby,String message) {
+    public void broadcastToLobby(UserThread sender, Lobby lobby, String message) {
         synchronized (lobby.getPlayers()) {
             lobby.getPlayers().stream().filter(player -> player != sender).forEach(player -> player.sendMessage(message));
+        }
+    }
+
+    public void broadcastInGame(Lobby lobby, String message) {
+        synchronized (lobby.getPlayers()) {
+            lobby.getPlayers().forEach(player -> player.sendMessage(message));
         }
     }
 
@@ -116,6 +122,7 @@ public class Server {
 
         sb.append("----------------------------------------------\n");
         sb.append("options    List commands\n");
+        sb.append("start       Start game (Admin only)\n");
         sb.append("set_public              \tSet your lobby to public\n");
         sb.append("set_private             \tSet your lobby to private\n");
         sb.append("invite <username>        \tSend request\n");

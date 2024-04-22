@@ -1,6 +1,8 @@
 package server;
 
 import client.UserThread;
+import model.entities.PlayerDeck;
+import model.entities.Uno;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -12,6 +14,7 @@ public class Lobby {
     private String lobbyName;
     private Set<UserThread> players;
     private boolean privateLobby;
+    private Uno uno;
 
     public Lobby(Server server, UserThread admin, String lobbyName) {
         this.server = server;
@@ -19,6 +22,15 @@ public class Lobby {
         this.lobbyName = lobbyName;
         this.players = Collections.synchronizedSet(new HashSet<>());
         players.add(admin);
+    }
+
+    public void start() {
+        uno = new Uno(server, this, players);
+
+        server.broadcastInGame(this, uno.getCurrentStatus());
+        for (UserThread player : players)
+            player.sendMessage(player.getDeck().toString());
+
     }
 
     public String getLobbyName() {
@@ -47,6 +59,18 @@ public class Lobby {
 
     public boolean isEmpty() {
         return players.isEmpty();
+    }
+
+    public boolean notEnoughPlayers() {
+        return players.size() == 1;
+    }
+
+    public boolean arePlayersReady() {
+        return players.stream().allMatch(UserThread::isReady);
+    }
+
+    public void setInGamePlayers() {
+        players.forEach(player -> player.setInGame(true));
     }
 
     public void setPrivateLobby(boolean privateLobby) {

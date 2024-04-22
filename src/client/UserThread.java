@@ -1,5 +1,6 @@
 package client;
 
+import model.entities.PlayerDeck;
 import server.Lobby;
 import server.Server;
 
@@ -8,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserThread extends Thread {
     private String username;
@@ -17,8 +20,10 @@ public class UserThread extends Thread {
     private PrintWriter toUser;
     private Lobby lobby;
     private boolean hasInvite;
+    private boolean ready;
     private boolean inLobby;
-    private boolean ingame;
+    private boolean inGame;
+    private PlayerDeck deck;
 
     public UserThread(Socket socket, Server server) throws IOException {
         this.socket = socket;
@@ -30,6 +35,30 @@ public class UserThread extends Thread {
         } catch (IOException e) {
             System.err.println("Error with streams: " + e.getMessage());
         }
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public PlayerDeck getDeck() {
+        return deck;
+    }
+
+    public void setDeck(PlayerDeck deck) {
+        this.deck = deck;
+    }
+
+    public boolean isReady() {
+        return ready;
+    }
+
+    public boolean isInGame() {
+        return inGame;
+    }
+
+    public void setInGame(boolean inGame) {
+        this.inGame = inGame;
     }
 
     @Override
@@ -105,7 +134,20 @@ public class UserThread extends Thread {
             case "leave":
                 leaveLobbyHandler();
                 break;
+            case "ready":
+                ready = true;
+                break;
+            case "start":
+                startGameHandler();
+                break;
+            case "test":
+                sendMessage(lobby.getPlayers().toString());
+                break;
         }
+    }
+
+    public void sendMessage(String message) {
+        toUser.println(message);
     }
 
     private void createLobbyHandler(String lobbyName) {
@@ -119,6 +161,23 @@ public class UserThread extends Thread {
         }
     }
 
+    private void joinLobbyHandler(String lobbyName) {
+        Lobby lobby = server.getLobbyByName(lobbyName);
+
+        if (lobby == null)
+            sendMessage("Lobby " + lobbyName + " does not exist!");
+        else {
+            if (lobby.isPrivateLobby())
+                sendMessage("You can't join private lobby!");
+            else {
+                lobby.addPlayer(this);
+                this.lobby = lobby;
+                sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
+                server.broadcastToLobby(this, lobby, this.username + " joined!");
+            }
+        }
+    }
+
     private void invitePlayerHandler(String username) throws IOException {
         UserThread user = server.getUserByUsername(username);
 
@@ -128,7 +187,6 @@ public class UserThread extends Thread {
         }
         else
             sendMessage(username + " is offline!");
-
     }
 
     private void acceptInviteHandler(String lobbyName) {
@@ -152,23 +210,6 @@ public class UserThread extends Thread {
 
     }
 
-    private void joinLobbyHandler(String lobbyName) {
-        Lobby lobby = server.getLobbyByName(lobbyName);
-
-        if (lobby == null)
-            sendMessage("Lobby " + lobbyName + " does not exist!");
-        else {
-            if (lobby.isPrivateLobby())
-                sendMessage("You can't join private lobby!");
-            else {
-                lobby.addPlayer(this);
-                this.lobby = lobby;
-                sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
-                server.broadcastToLobby(this, lobby, this.username + " joined!");
-            }
-        }
-    }
-
     private void leaveLobbyHandler() {
         lobby.removePlayer(this);
         sendMessage("You left " + lobby.getLobbyName());
@@ -178,12 +219,19 @@ public class UserThread extends Thread {
             server.broadcastToLobby(this, lobby, username + " left lobby!");
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void sendMessage(String message) {
-        toUser.println(message);
+    private void startGameHandler() {
+        if (!server.isAdmin(username))
+            sendMessage("Only admin can start the game!");
+        else if (lobby.notEnoughPlayers())
+            sendMessage("You need at least 2 players to players to play!");
+        else if (!lobby.arePlayersReady())
+            sendMessage("Players are not ready!");
+        else {
+            lobby.setInGamePlayers();
+            sendMessage("Game is starting...");
+            server.broadcastToLobby(this, lobby, "Game is starting...");
+            lobby.start();
+        }
     }
 
     @Override
