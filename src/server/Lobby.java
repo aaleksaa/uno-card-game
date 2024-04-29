@@ -1,11 +1,11 @@
 package server;
 
 import client.UserThread;
-import model.entities.PlayerDeck;
 import model.entities.Uno;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 public class Lobby {
@@ -24,13 +24,22 @@ public class Lobby {
         players.add(admin);
     }
 
-    public void start() {
+    public synchronized void start() {
         uno = new Uno(server, this, players);
 
         server.broadcastInGame(this, uno.getCurrentStatus());
         for (UserThread player : players)
             player.sendMessage(player.getDeck().toString());
+    }
 
+    public Uno getUno() {
+        return uno;
+    }
+
+    public void setNewAdmin() {
+        Iterator<UserThread> iter = players.iterator();
+
+        admin = iter.next();
     }
 
     public String getLobbyName() {

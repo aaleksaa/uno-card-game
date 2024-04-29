@@ -140,7 +140,7 @@ public class Server {
         sb.append("----------------------------------------------\n");
         sb.append("help             \t\t\tList commands\n");
         sb.append("view_users       \t\t\tView online users\n");
-        sb.append("view_lobbies     \t\t\tView current lobies\n");
+        sb.append("view_lobbies     \t\t\tView current lobbies\n");
         sb.append("create_lobby <lobby name> \tCreate lobby\n");
         sb.append("accept                  \tAccept request\n");
         sb.append("decline                 \tDecline request\n");

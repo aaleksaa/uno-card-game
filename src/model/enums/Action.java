@@ -11,6 +11,10 @@ public enum Action {
         this.action = action;
     }
 
+    public String getAction() {
+        return action;
+    }
+
     public static Action fromString(String action) {
         return switch (action) {
             case "Skip" -> SKIP;

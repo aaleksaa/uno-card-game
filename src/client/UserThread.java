@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserThread extends Thread {
     private String username;
@@ -59,6 +57,10 @@ public class UserThread extends Thread {
 
     public void setInGame(boolean inGame) {
         this.inGame = inGame;
+    }
+
+    public void setReady(boolean ready) {
+        this.ready = ready;
     }
 
     @Override
@@ -143,6 +145,9 @@ public class UserThread extends Thread {
             case "test":
                 sendMessage(lobby.getPlayers().toString());
                 break;
+            case "play":
+                lobby.getUno().playMove(parts[1]);
+                break;
         }
     }
 
@@ -158,6 +163,7 @@ public class UserThread extends Thread {
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
             server.broadcastToAll(this, username + " created new lobby!");
+            this.ready = true;
         }
     }
 
@@ -207,16 +213,22 @@ public class UserThread extends Thread {
             sendMessage("You don't have any invites!");
         else
             server.broadcastToLobby(this, server.getLobbyByName(lobbyName),username + " declined invite!");
-
     }
 
     private void leaveLobbyHandler() {
         lobby.removePlayer(this);
         sendMessage("You left " + lobby.getLobbyName());
+
         if (lobby.isEmpty())
             server.removeLobby(lobby);
-        else
+        else {
             server.broadcastToLobby(this, lobby, username + " left lobby!");
+            if (lobby.getAdmin().equals(this)) {
+                lobby.setNewAdmin();
+                lobby.getAdmin().setReady(true);
+                server.broadcastToLobby(this, lobby, lobby.getAdmin() + " is new admin!");
+            }
+        }
     }
 
     private void startGameHandler() {
