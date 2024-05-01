@@ -19,4 +19,12 @@ public class ActionCard extends Card {
     public String toString() {
         return color + " - " + action;
     }
+
+    @Override
+    public boolean match(String[] parts) {
+        Color inputColor = Color.fromString(parts[0]);
+        Action inputAction = Action.fromString(parts[1]);
+
+        return color.getColor().equals(parts[0]) && action.getAction().equals(parts[1]);
+    }
 }

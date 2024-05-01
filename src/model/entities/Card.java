@@ -12,4 +12,6 @@ public abstract class Card {
     public Color getColor() {
         return color;
     }
+
+    public abstract boolean match(String[] parts);
 }

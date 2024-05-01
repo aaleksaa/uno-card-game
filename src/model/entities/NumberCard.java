@@ -19,4 +19,12 @@ public class NumberCard extends Card {
     public String toString() {
         return color + " - " + number;
     }
+
+    @Override
+    public boolean match(String[] parts) {
+        Color inputColor = Color.fromString(parts[0]);
+        int inputNumber = Integer.parseInt(parts[1]);
+
+        return color.equals(inputColor) && number == inputNumber;
+    }
 }

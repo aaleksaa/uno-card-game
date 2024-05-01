@@ -12,19 +12,19 @@ public class Uno {
     private Server server;
     private Lobby lobby;
     private Deck deck;
-    private Set<UserThread> players;
     private Queue<UserThread> queue = new ConcurrentLinkedQueue<>();
     private Card currentCard;
     private Color currentColor;
     private UserThread playerOnMove;
+    private Set<UserThread> players;
 
     public Uno(Server server, Lobby lobby, Set<UserThread> players) {
         this.server = server;
         this.lobby = lobby;
         this.deck = new Deck();
         this.players = players;
-        dealCards();
         this.queue.addAll(players);
+        dealCards();
         do {
             this.currentCard = deck.dealCard();
         } while (!(currentCard instanceof NumberCard));
@@ -34,6 +34,10 @@ public class Uno {
 
     public Deck getDeck() {
         return deck;
+    }
+
+    public UserThread getPlayerOnMove() {
+        return playerOnMove;
     }
 
     public synchronized void playMove(String move) {
@@ -48,6 +52,7 @@ public class Uno {
         queue.add(currPlayer);
         playerOnMove = queue.peek();
 
+        server.broadcastInGame(lobby, currPlayer + " played " + card);
         server.broadcastInGame(lobby, getCurrentStatus());
         send();
     }
@@ -60,27 +65,27 @@ public class Uno {
         StringBuilder sb = new StringBuilder();
 
         sb.append("---------------------------------------------\n");
-        sb.append("Current card: ").append(currentCard).append("\n");
-        sb.append("Current color: ").append(currentColor).append("\n");
-        sb.append("Player on the move: ").append(playerOnMove).append("\n");
-        sb.append("Number of cards\n");
+        sb.append("Current card: ").append(currentCard).append("  ");
+        sb.append("Current color: ").append(currentColor).append("  ");
+        sb.append("Player on the move: ").append(playerOnMove).append("  ");
+        sb.append("Number of cards: ");
 
-        for (UserThread player : players) {
-            sb.append(player.getUsername()).append(" ").append(player.getDeck().getNumberOfCards()).append("\n");
-        }
+        for (UserThread player : queue)
+            sb.append(player.getUsername()).append(" ").append(player.getDeck().getNumberOfCards()).append(", ");
 
-        sb.append("-----------------------------------------------");
+
+        sb.append("\n-----------------------------------------------");
 
         return sb.toString();
     }
 
     public void send() {
-        for (UserThread player : players)
+        for (UserThread player : queue)
             player.sendMessage(player.getDeck().toString());
     }
 
     public void dealCards() {
-        for (UserThread player : players) {
+        for (UserThread player : queue) {
             List<Card> cards = new ArrayList<>();
 
             for (int i = 0; i < 7; i++) {
@@ -90,7 +95,6 @@ public class Uno {
 
             player.setDeck(new PlayerDeck(cards));
         }
-
     }
 
     public void setCurrentCard(Card currentCard) {

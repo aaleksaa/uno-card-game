@@ -142,11 +142,8 @@ public class UserThread extends Thread {
             case "start":
                 startGameHandler();
                 break;
-            case "test":
-                sendMessage(lobby.getPlayers().toString());
-                break;
             case "play":
-                lobby.getUno().playMove(parts[1]);
+                playHandler(parts[1]);
                 break;
         }
     }
@@ -184,7 +181,7 @@ public class UserThread extends Thread {
         }
     }
 
-    private void invitePlayerHandler(String username) throws IOException {
+    private void invitePlayerHandler(String username) {
         UserThread user = server.getUserByUsername(username);
 
         if (user != null) {
@@ -231,7 +228,7 @@ public class UserThread extends Thread {
         }
     }
 
-    private void startGameHandler() {
+    private synchronized void startGameHandler() {
         if (!server.isAdmin(username))
             sendMessage("Only admin can start the game!");
         else if (lobby.notEnoughPlayers())
@@ -244,6 +241,13 @@ public class UserThread extends Thread {
             server.broadcastToLobby(this, lobby, "Game is starting...");
             lobby.start();
         }
+    }
+
+    private void playHandler(String move) {
+        if (!lobby.getUno().getPlayerOnMove().equals(this))
+            sendMessage("It's not your turn!");
+        else
+            lobby.getUno().playMove(move);
     }
 
     @Override

@@ -1,8 +1,8 @@
 package model.enums;
 
 public enum WildAction {
-    CHANGE_COLOR("Change color"),
-    DRAW_FOUR("Draw four");
+    CHANGE_COLOR("CHANGE_COLOR"),
+    DRAW_FOUR("DRAW_FOUR");
 
     private final String specialAction;
 
@@ -12,10 +12,14 @@ public enum WildAction {
 
     public static WildAction fromString(String specialAction) {
         return switch (specialAction) {
-            case "Change color" -> CHANGE_COLOR;
-            case "Draw four" -> DRAW_FOUR;
+            case "CHANGE_COLOR" -> CHANGE_COLOR;
+            case "DRAW_FOUR" -> DRAW_FOUR;
             default -> null;
         };
+    }
+
+    public String getSpecialAction() {
+        return specialAction;
     }
 
     @Override

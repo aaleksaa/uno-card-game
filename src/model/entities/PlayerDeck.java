@@ -31,33 +31,21 @@ public class PlayerDeck {
         cards.remove(card);
     }
 
+    public void addCard(Card card) {
+        cards.add(card);
+    }
+
     @Override
     public String toString() {
         return cards.toString();
     }
 
     public Card getCard(String cardString) {
-        String[] parts = cardString.split("_");
+        String[] parts = cardString.split("-");
 
-        Card target = null;
-
-        for (Card card : cards) {
-            if (card instanceof NumberCard) {
-                NumberCard nc = (NumberCard) card;
-
-                if (nc.getColor().getColor().equals(parts[0]) && nc.getNumber() == Integer.parseInt(parts[1]))
-                    return nc;
-
-            } else if (card instanceof ActionCard) {
-                ActionCard ac = (ActionCard) card;
-
-                if (ac.getColor().getColor().equals(parts[0]) && ac.getAction().getAction().equals(parts[1]))
-                    return ac;
-            } else  {
-                WildCard wc = (WildCard) card;
-            }
-        }
-
+        for (Card card : cards)
+            if (card.match(parts))
+                return card;
         return null;
     }
 }

@@ -1,9 +1,9 @@
 package model.enums;
 
 public enum Action {
-    SKIP("Skip"),
-    REVERSE("Reverse"),
-    DRAW_TWO("Draw two");
+    SKIP("SKIP"),
+    REVERSE("REVERSE"),
+    DRAW_TWO("DRAW_TWO");
 
     private final String action;
 
@@ -17,9 +17,9 @@ public enum Action {
 
     public static Action fromString(String action) {
         return switch (action) {
-            case "Skip" -> SKIP;
-            case "Reverse" -> REVERSE;
-            case "Draw two" -> DRAW_TWO;
+            case "SKIP" -> SKIP;
+            case "REVERSE" -> REVERSE;
+            case "DRAW_TWO" -> DRAW_TWO;
             default -> null;
         };
     }
