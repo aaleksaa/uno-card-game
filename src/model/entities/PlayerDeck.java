@@ -19,6 +19,10 @@ public class PlayerDeck {
         return numberOfCards;
     }
 
+    public boolean isEmpty() {
+        return numberOfCards == 0;
+    }
+
     public void removeCard(Card card) {
         cards.remove(card);
         numberOfCards--;

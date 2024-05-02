@@ -17,13 +17,15 @@ public class Uno {
     private Card currentCard;
     private Color currentColor;
     private UserThread playerOnMove;
-    //private Set<UserThread> players;
+    private boolean gameFinished;
+    private Map<String, Integer> rankings = new TreeMap<>();
+    private Set<UserThread> players;
 
     public Uno(Server server, Lobby lobby, Set<UserThread> players) {
         this.server = server;
         this.lobby = lobby;
         this.deck = new Deck();
-        //this.players = players;
+        this.players = players;
         this.queue.addAll(players);
         dealCards();
         do {
@@ -41,6 +43,10 @@ public class Uno {
         return playerOnMove;
     }
 
+    public boolean isGameFinished() {
+        return rankings.size() == players.size() - 1;
+    }
+
     public synchronized void playMove(String move) {
         UserThread currPlayer = queue.poll();
         Card card = currPlayer.getDeck().getCard(move);
@@ -52,9 +58,20 @@ public class Uno {
         else
             playWildCard(currPlayer, card);
 
-        server.broadcastInGame(lobby, currPlayer + " played " + card);
-        server.broadcastInGame(lobby, getCurrentStatus());
-        send();
+
+        message(currPlayer, card);
+    }
+
+    private void message(UserThread currPlayer, Card card) {
+        if (isGameFinished()) {
+            rankings.put(queue.poll().getUsername(), rankings.size() + 1);
+            for (UserThread player : players)
+                player.sendMessage(rankings.toString());
+        } else {
+            server.broadcastInGame(lobby, currPlayer + " played " + card);
+            server.broadcastInGame(lobby, getCurrentStatus());
+            send();
+        }
     }
 
     private void playNumberCard(UserThread player, Card card) {
@@ -62,7 +79,7 @@ public class Uno {
         currentCard = card;
         currentColor = card.getColor();
 
-        queue.add(player);
+        addToQueue(player);
         playerOnMove = queue.peek();
     }
 
@@ -71,7 +88,7 @@ public class Uno {
         currentCard = card;
         currentColor = card.getColor();
 
-        queue.add(player);
+        addToQueue(player);
 
         if (card.getCardType() == CardType.DRAW_TWO) {
             playerOnMove = queue.peek();
@@ -88,12 +105,19 @@ public class Uno {
         currentCard = card;
         currentColor = getRandomColor();
 
-        queue.add(player);
+        addToQueue(player);
 
         if (card.getCardType() == CardType.DRAW_FOUR) {
             playerOnMove = queue.peek();
             drawCards(playerOnMove, 4);
         }
+    }
+
+    private void addToQueue(UserThread player) {
+        if (!player.getDeck().isEmpty())
+            queue.add(player);
+        else
+            rankings.put(player.getUsername(), rankings.size() + 1);
     }
 
     private Color getRandomColor() {
@@ -119,7 +143,6 @@ public class Uno {
         sb.append("Current card: ").append(currentCard).append("  ");
         sb.append("Current color: ").append(currentColor).append("  ");
         sb.append("Player on the move: ").append(playerOnMove).append("  ");
-        sb.append("Next player: ").append(queue.peek()).append("  ");
         sb.append("Number of cards: ");
 
         for (UserThread player : queue)
@@ -140,7 +163,7 @@ public class Uno {
         for (UserThread player : queue) {
             List<Card> cards = new ArrayList<>();
 
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 4; i++) {
                 cards.add(deck.dealCard());
                 deck.removeCardFromDeck();
             }
