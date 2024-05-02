@@ -21,7 +21,7 @@ public abstract class Card {
     }
 
     public static Card fromString(String input) {
-        String[] parts = input.split("_");
+        String[] parts = input.split("-");
         Color inputColor = Color.fromString(parts[0]);
         CardType inputType = CardType.fromString(parts[1]);
 

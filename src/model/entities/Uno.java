@@ -1,6 +1,7 @@
 package model.entities;
 
 import client.UserThread;
+import model.enums.CardType;
 import model.enums.Color;
 import server.Lobby;
 import server.Server;
@@ -16,13 +17,13 @@ public class Uno {
     private Card currentCard;
     private Color currentColor;
     private UserThread playerOnMove;
-    private Set<UserThread> players;
+    //private Set<UserThread> players;
 
     public Uno(Server server, Lobby lobby, Set<UserThread> players) {
         this.server = server;
         this.lobby = lobby;
         this.deck = new Deck();
-        this.players = players;
+        //this.players = players;
         this.queue.addAll(players);
         dealCards();
         do {
@@ -42,19 +43,51 @@ public class Uno {
 
     public synchronized void playMove(String move) {
         UserThread currPlayer = queue.poll();
-
         Card card = currPlayer.getDeck().getCard(move);
-        currPlayer.getDeck().decrementNumberOfCards();
-        currentCard = card;
-        currentColor = card.getColor();
-        currPlayer.getDeck().removeCard(card);
 
-        queue.add(currPlayer);
-        playerOnMove = queue.peek();
+        if (card instanceof NumberCard)
+            playNumberCard(currPlayer, card);
+        else if (card instanceof ActionCard)
+            playActionCard(currPlayer, card);
+
+//        currPlayer.getDeck().decrementNumberOfCards();
+//        currentCard = card;
+//        currentColor = card.getColor();
+//        currPlayer.getDeck().removeCard(card);
+//
+//        queue.add(currPlayer);
+//        playerOnMove = queue.peek();
 
         server.broadcastInGame(lobby, currPlayer + " played " + card);
         server.broadcastInGame(lobby, getCurrentStatus());
         send();
+    }
+
+    private void playNumberCard(UserThread player, Card card) {
+        player.getDeck().removeCard(card);
+        currentCard = card;
+        currentColor = card.getColor();
+
+        queue.add(player);
+        playerOnMove = queue.peek();
+    }
+
+    private void playActionCard(UserThread player, Card card) {
+        player.getDeck().removeCard(card);
+        currentCard = card;
+        currentColor = card.getColor();
+
+        queue.add(player);
+
+        if (card.getCardType() == CardType.DRAW_TWO) {
+            playerOnMove = queue.peek();
+            drawCards(playerOnMove, 2);
+        }
+    }
+
+    private void drawCards(UserThread player, int amount) {
+        for (int i = 0; i < amount; i++)
+            player.getDeck().addCard(deck.dealCard());
     }
 
     public Card getCurrentCard() {

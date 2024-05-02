@@ -19,20 +19,14 @@ public class PlayerDeck {
         return numberOfCards;
     }
 
-    public void incrementNumberOfCards(int number) {
-        numberOfCards += number;
-    }
-
-    public void decrementNumberOfCards() {
-        numberOfCards--;
-    }
-
     public void removeCard(Card card) {
         cards.remove(card);
+        numberOfCards--;
     }
 
     public void addCard(Card card) {
         cards.add(card);
+        numberOfCards++;
     }
 
     @Override
