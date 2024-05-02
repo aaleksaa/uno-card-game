@@ -1,30 +1,42 @@
 package model.entities;
 
-import model.enums.Action;
+import model.enums.CardType;
 import model.enums.Color;
 
-public class NumberCard extends Card {
-    private final int number;
+import java.util.Objects;
 
-    public NumberCard(Color color, int number) {
-        super(color);
-        this.number = number;
+public class NumberCard extends Card {
+    private final int value;
+
+    public NumberCard(Color color, int value) {
+        super(color, CardType.NUMBER);
+        this.value = value;
     }
 
-    public int getNumber() {
-        return number;
+    public int getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
-        return color + " - " + number;
+        return color + " - " + value;
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+
+        NumberCard card = (NumberCard) obj;
+        return color == card.getColor() && value == card.getValue();
     }
 
     @Override
-    public boolean match(String[] parts) {
-        Color inputColor = Color.fromString(parts[0]);
-        int inputNumber = Integer.parseInt(parts[1]);
-
-        return color.equals(inputColor) && number == inputNumber;
+    public int hashCode() {
+        return Objects.hash(color, value);
     }
 }

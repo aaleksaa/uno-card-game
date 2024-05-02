@@ -1,30 +1,34 @@
 package model.entities;
 
+import model.enums.CardType;
 import model.enums.Color;
-import model.enums.WildAction;
+
+import java.util.Objects;
 
 public class WildCard extends Card {
-    private WildAction wildAction;
-
-    public WildCard(WildAction specialAction) {
-        super(Color.WILD);
-        this.wildAction = specialAction;
-    }
-
-    public WildAction getWildAction() {
-        return wildAction;
+    public WildCard(CardType cardType) {
+        super(Color.WILD, cardType);
     }
 
     @Override
     public String toString() {
-        return color + " - " + wildAction;
+        return color + " - " + cardType;
     }
 
     @Override
-    public boolean match(String[] parts) {
-        Color inputColor = Color.fromString(parts[0]);
-        WildAction inputWildAction = WildAction.fromString(parts[1]);
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
 
-        return color.getColor().equals(parts[0]) && wildAction.getSpecialAction().equals(parts[1]);
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+
+        WildCard card = (WildCard) obj;
+        return color == card.getColor() && cardType == card.getCardType();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, cardType);
     }
 }

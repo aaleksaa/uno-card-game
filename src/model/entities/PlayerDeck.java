@@ -41,10 +41,10 @@ public class PlayerDeck {
     }
 
     public Card getCard(String cardString) {
-        String[] parts = cardString.split("-");
+        Card inputCard = Card.fromString(cardString);
 
         for (Card card : cards)
-            if (card.match(parts))
+            if (card.equals(inputCard))
                 return card;
         return null;
     }

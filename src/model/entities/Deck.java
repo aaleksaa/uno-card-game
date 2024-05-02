@@ -1,8 +1,7 @@
 package model.entities;
 
-import model.enums.Action;
+import model.enums.CardType;
 import model.enums.Color;
-import model.enums.WildAction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,16 +43,16 @@ public class Deck {
 
     private void addWildCard() {
         for (int i = 0; i < 4; i++) {
-            addCardToDeck(new WildCard(WildAction.DRAW_FOUR));
-            addCardToDeck(new WildCard(WildAction.CHANGE_COLOR));
+            addCardToDeck(new WildCard(CardType.CHANGE_COLOR));
+            addCardToDeck(new WildCard(CardType.DRAW_FOUR));
         }
     }
 
     private void addActionCards(Color color) {
         for (int i = 0; i < 2; i++) {
-            addCardToDeck(new ActionCard(color, Action.REVERSE));
-            addCardToDeck(new ActionCard(color, Action.SKIP));
-            addCardToDeck(new ActionCard(color, Action.DRAW_TWO));
+            addCardToDeck(new ActionCard(color, CardType.REVERSE));
+            addCardToDeck(new ActionCard(color, CardType.SKIP));
+            addCardToDeck(new ActionCard(color, CardType.DRAW_TWO));
         }
     }
 
