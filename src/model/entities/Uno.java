@@ -49,14 +49,8 @@ public class Uno {
             playNumberCard(currPlayer, card);
         else if (card instanceof ActionCard)
             playActionCard(currPlayer, card);
-
-//        currPlayer.getDeck().decrementNumberOfCards();
-//        currentCard = card;
-//        currentColor = card.getColor();
-//        currPlayer.getDeck().removeCard(card);
-//
-//        queue.add(currPlayer);
-//        playerOnMove = queue.peek();
+        else
+            playWildCard(currPlayer, card);
 
         server.broadcastInGame(lobby, currPlayer + " played " + card);
         server.broadcastInGame(lobby, getCurrentStatus());
@@ -82,8 +76,32 @@ public class Uno {
         if (card.getCardType() == CardType.DRAW_TWO) {
             playerOnMove = queue.peek();
             drawCards(playerOnMove, 2);
+        } else if (card.getCardType() == CardType.SKIP) {
+            UserThread skippedPlayer = queue.poll();
+            queue.add(skippedPlayer);
+            playerOnMove = queue.peek();
         }
     }
+
+    private void playWildCard(UserThread player, Card card) {
+        player.getDeck().removeCard(card);
+        currentCard = card;
+        currentColor = getRandomColor();
+
+        queue.add(player);
+
+        if (card.getCardType() == CardType.DRAW_FOUR) {
+            playerOnMove = queue.peek();
+            drawCards(playerOnMove, 4);
+        }
+    }
+
+    private Color getRandomColor() {
+        Color[] colors = {Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW};
+
+        return colors[new Random().nextInt(colors.length)];
+    }
+
 
     private void drawCards(UserThread player, int amount) {
         for (int i = 0; i < amount; i++)
@@ -101,6 +119,7 @@ public class Uno {
         sb.append("Current card: ").append(currentCard).append("  ");
         sb.append("Current color: ").append(currentColor).append("  ");
         sb.append("Player on the move: ").append(playerOnMove).append("  ");
+        sb.append("Next player: ").append(queue.peek()).append("  ");
         sb.append("Number of cards: ");
 
         for (UserThread player : queue)
