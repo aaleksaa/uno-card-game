@@ -28,9 +28,7 @@ public class Server {
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-
-                UserThread user = new UserThread(clientSocket, this);
-                user.start();
+                new UserThread(clientSocket, this).start();
             }
         } catch (IOException e) {
             System.err.println("Server error: " + e.getMessage());

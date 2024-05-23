@@ -1,57 +1,82 @@
 package client;
 
 import server.Server;
+import view.ClientGUI;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Client {
-    private final String hostname;
-    private final int port;
+public class Client extends Thread {
+    private InetAddress address;
+    private int port;
+    private Socket socket;
+    private BufferedReader input;
+    private PrintWriter output;
+    private String username;
+    private ClientGUI clientGUI;
 
-    public Client(String hostname) {
-        this.hostname = hostname;
-        this.port = Server.PORT;
-    }
-
-    public static void main(String[] args) {
-        Client client = new Client("localhost");
-        client.execute();
-    }
-
-    private void execute() {
-        try (Socket clientSocket = new Socket(hostname, port)) {
-            Scanner sc = new Scanner(System.in);
-            BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter output = new PrintWriter(clientSocket.getOutputStream(), true);
-
-            System.out.println("Connected to the server " + hostname + ":" + port);
-            System.out.print("Enter username:");
-            String username = sc.next();
-            output.println(username);
-
-            String response = input.readLine();
-
-            if (response.startsWith("W")) {
-                System.out.println(response);
-                Thread rt = new ClientReadThread(username, clientSocket);
-                Thread wt = new ClientWriteThread(username, clientSocket);
-
-                rt.start();
-                wt.start();
-
-                rt.join();
-                wt.join();
-            } else
-                System.out.println(response);
+    public Client(ClientGUI clientGUI) {
+        try {
+            this.port = Server.PORT;
+            this.address = InetAddress.getByName("localhost");
+            this.socket = new Socket(address, port);
+            this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.output = new PrintWriter(socket.getOutputStream(), true);
+            this.clientGUI = clientGUI;
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
+        }
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                String response = input.readLine();
+
+                if (response == null) {
+                    System.err.println("Connection lost!");
+                    break;
+                }
+
+                handleResponse(response);
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendCommand(String command) {
+        output.println(command);
+    }
+
+    private void handleResponse(String response) {
+        String[] parts = response.split(" ");
+
+        switch (parts[0]) {
+            case "username":
+                handleUsername(parts[1], parts[2]);
+                break;
+        }
+    }
+
+    private void handleUsername(String valid, String username) {
+        if (valid.equals("no"))
+            clientGUI.showMessageLabel("Username " + username + " is already taken! Try again.");
+        else
+            clientGUI.showMessageLabel("Welcome " + username);
     }
 }

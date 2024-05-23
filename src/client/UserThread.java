@@ -66,23 +66,32 @@ public class UserThread extends Thread {
     @Override
     public void run() {
         try {
-            username = fromUser.readLine();
+            String userInput;
+            while (true) {
+                userInput = fromUser.readLine();
 
-            if (!server.isUsernameAvailable(username))
-                toUser.println("Username " + username + " is taken! Try again.");
-            else {
-                sendMessage("Welcome " + username + "! Type \"help\" for more info!");
-                server.addNewUser(this);
-                server.broadcastToAll(this, "User " + username + " connected!");
+                if (userInput == null || userInput.equals("exit"))
+                    break;
 
-                String userInput;
-                do {
-                    userInput = fromUser.readLine();
-                    executeCommand(userInput);
-                } while (!userInput.equals("exit"));
-
-                server.broadcastToAll(this, "User " + username + " disconnected!");
+                executeCommand(userInput);
             }
+//            username = fromUser.readLine();
+//
+//            if (!server.isUsernameAvailable(username))
+//                toUser.println("Username " + username + " is taken! Try again.");
+//            else {
+//                sendMessage("Welcome " + username + "! Type \"help\" for more info!");
+//                server.addNewUser(this);
+//                server.broadcastToAll(this, "User " + username + " connected!");
+//
+//                String userInput;
+//                do {
+//                    userInput = fromUser.readLine();
+//                    executeCommand(userInput);
+//                } while (!userInput.equals("exit"));
+//
+//                server.broadcastToAll(this, "User " + username + " disconnected!");
+//            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -145,6 +154,9 @@ public class UserThread extends Thread {
             case "play":
                 playHandler(parts[1]);
                 break;
+            case "username":
+                checkUsername(parts[1]);
+                break;
         }
     }
 
@@ -178,6 +190,16 @@ public class UserThread extends Thread {
                 sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
                 server.broadcastToLobby(this, lobby, this.username + " joined!");
             }
+        }
+    }
+
+    private void checkUsername(String username) {
+        if (!server.isUsernameAvailable(username))
+            sendMessage("username " + "no " + username);
+        else {
+            server.addNewUser(this);
+            sendMessage("username " + "yes " + username);
+            this.username = username;
         }
     }
 
