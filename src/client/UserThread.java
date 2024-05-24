@@ -115,9 +115,9 @@ public class UserThread extends Thread {
             case "options":
                 sendMessage(server.listLobbyCommands());
                 break;
-            case "view_users":
-                sendMessage(server.getConnectedUsers());
-                break;
+//            case "view_users":
+//                sendMessage(server.getConnectedUsers());
+//                break;
             case "view_lobbies":
                 sendMessage(server.getLobbies());
                 break;
@@ -199,9 +199,13 @@ public class UserThread extends Thread {
         else {
             server.addNewUser(this);
             sendMessage("username " + "yes " + username);
+            server.broadcastToAll(this, username + " joined server!");
+            sendMessage("users " + server.getConnectedUsers(this));
+            server.broadcastToAll(this, "connect " + username);
             this.username = username;
         }
     }
+
 
     private void invitePlayerHandler(String username) {
         UserThread user = server.getUserByUsername(username);

@@ -70,13 +70,35 @@ public class Client extends Thread {
             case "username":
                 handleUsername(parts[1], parts[2]);
                 break;
+            case "connect":
+                handleConnect(parts[1]);
+                break;
+            case "users":
+                handleUsers(response);
+                break;
+            default:
+                clientGUI.showTest(response);
+                break;
         }
     }
 
     private void handleUsername(String valid, String username) {
         if (valid.equals("no"))
             clientGUI.showMessageLabel("Username " + username + " is already taken! Try again.");
-        else
-            clientGUI.showMessageLabel("Welcome " + username);
+        else {
+            this.username = username;
+            clientGUI.setStartScene();
+        }
+    }
+
+    private void handleUsers(String users) {
+        String[] parts = users.split(" ");
+
+        for (int i = 1; i < parts.length; i++)
+            clientGUI.addUserToList(parts[i]);
+    }
+
+    private void handleConnect(String username) {
+        clientGUI.addUserToList(username);
     }
 }

@@ -59,9 +59,14 @@ public class Server {
         lobbies.remove(lobby);
     }
 
-    public String getConnectedUsers() {
+    public String getConnectedUsers(UserThread user) {
         synchronized (users) {
-            return "Online users: " + users.stream().map(UserThread::getUsername).toList();
+            StringBuilder sb = new StringBuilder();
+            for (UserThread u : users)
+                if (u != user)
+                    sb.append(u.getUsername()).append(" ");
+
+            return sb.toString();
         }
     }
 
