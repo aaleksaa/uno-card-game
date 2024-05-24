@@ -166,12 +166,13 @@ public class UserThread extends Thread {
 
     private void createLobbyHandler(String lobbyName) {
         if (!server.isLobbyNameAvailable(lobbyName))
-            sendMessage("Lobby with " + lobbyName + " already exists!");
+            sendMessage("create_lobby no " + lobbyName);
         else {
-            sendMessage("Lobby successfully created! Type \"options\" for info!");
+            sendMessage("create_lobby yes " + lobbyName);
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
             server.broadcastToAll(this, username + " created new lobby!");
+            server.broadcastToAll(this, "lobby_show " + lobbyName);
             this.ready = true;
         }
     }
@@ -195,10 +196,10 @@ public class UserThread extends Thread {
 
     private void checkUsername(String username) {
         if (!server.isUsernameAvailable(username))
-            sendMessage("username " + "no " + username);
+            sendMessage("username no " + username);
         else {
             server.addNewUser(this);
-            sendMessage("username " + "yes " + username);
+            sendMessage("username yes " + username);
             server.broadcastToAll(this, username + " joined server!");
             sendMessage("users " + server.getConnectedUsers(this));
             server.broadcastToAll(this, "connect " + username);

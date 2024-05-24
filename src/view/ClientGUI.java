@@ -31,8 +31,10 @@ public class ClientGUI extends Application {
     private final ListView<String> lvLobbies = new ListView<>();
     private final Button btnCreateLobby = new Button("Create lobby");
     private final Button btnJoinLobby = new Button("Join lobby");
+    private final TextField tfCreate = new TextField();
     private final VBox vbUsers = new VBox();
     private final ListView<String> lvUsers = new ListView<>();
+    private final Button btnInvite = new Button("Invite");
 
 
     @Override
@@ -71,8 +73,9 @@ public class ClientGUI extends Application {
             root.getChildren().addAll(lblWelcome, lblTest, hbStart);
             hbStart.getChildren().addAll(vbLobbies, vbUsers);
             lblWelcome.setText("Welcome " + client.getUsername());
-            vbLobbies.getChildren().addAll(lvLobbies, btnCreateLobby, btnJoinLobby);
-            vbUsers.getChildren().addAll(lvUsers);
+            vbLobbies.getChildren().addAll(lvLobbies, btnCreateLobby, btnJoinLobby, tfCreate);
+            vbUsers.getChildren().addAll(lvUsers, btnInvite);
+            btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate));
         });
     }
 
@@ -86,5 +89,17 @@ public class ClientGUI extends Application {
 
     public void addUserToList(String username) {
         Platform.runLater(() -> lvUsers.getItems().add(username));
+    }
+
+    public void addLobbyToList(String lobbyName) {
+        Platform.runLater(() -> lvLobbies.getItems().add(lobbyName));
+    }
+
+    private void createLobbyEvent(TextField tf) {
+        String lobbyName = tf.getText();
+
+        if (!lobbyName.isEmpty())
+            client.sendCommand("create_lobby " + lobbyName);
+
     }
 }

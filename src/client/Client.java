@@ -76,6 +76,12 @@ public class Client extends Thread {
             case "users":
                 handleUsers(response);
                 break;
+            case "create_lobby":
+                handleCreateLobby(parts[1], parts[2]);
+                break;
+            case "lobby_show":
+                handleShowLobby(parts[1]);
+                break;
             default:
                 clientGUI.showTest(response);
                 break;
@@ -100,5 +106,17 @@ public class Client extends Thread {
 
     private void handleConnect(String username) {
         clientGUI.addUserToList(username);
+    }
+
+    private void handleCreateLobby(String valid, String lobbyName) {
+        if (valid.equals("no"))
+            clientGUI.showTest("ne valja!");
+        else {
+            clientGUI.addLobbyToList(lobbyName);
+        }
+    }
+
+    private void handleShowLobby(String lobbyName) {
+        clientGUI.addLobbyToList(lobbyName);
     }
 }
