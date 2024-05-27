@@ -58,7 +58,7 @@ public class Client extends Thread {
         }
     }
 
-    public void sendCommand(String command) {
+    public void sendRequest(String command) {
         toServer.println(command);
     }
 
@@ -94,7 +94,7 @@ public class Client extends Thread {
                 clientGUI.addItemToList(clientGUI.getLvLobbies(), parts[1]);
                 break;
             case "INVITE":
-                clientGUI.showAlert(parts[1], parts[2]);
+                clientGUI.showInviteAlert(parts[1], parts[2]);
                 break;
             case "LEAVE_LOBBY":
                 clientGUI.setStartScene();
@@ -104,6 +104,9 @@ public class Client extends Thread {
                 break;
             case "ACCEPT":
                 clientGUI.setLobbyScene(parts[1]);
+                break;
+            case "START":
+                clientGUI.setGameScene();
                 break;
             default:
                 clientGUI.showMessageLabel(response);

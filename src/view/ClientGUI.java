@@ -42,8 +42,8 @@ public class ClientGUI extends Application {
     private final ListView<String> lvPlayers = new ListView<>();
     private final Button btnAdminLeaveLobby = new Button("Leave lobby");
     private final Button btnLeaveLobby = new Button("Leave lobby");
-    private final Button btnSetReady = new Button("Set ready");
-    private final HBox hbLobbyButtons = new HBox(5, btnLeaveLobby, btnSetReady);
+    private final Button btnReady = new Button("Ready");
+    private final HBox hbLobbyButtons = new HBox(5, btnLeaveLobby, btnReady);
 
     private final Button btnPrivate = new Button("Set private");
     private final Button btnStart = new Button("Start game");
@@ -87,7 +87,7 @@ public class ClientGUI extends Application {
         if (username.isEmpty())
             showConnectErrorLabel("Fill in username field!");
         else
-            client.sendCommand("username " + username);
+            client.sendRequest("username " + username);
     }
 
 
@@ -116,8 +116,9 @@ public class ClientGUI extends Application {
             btnInvite.setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem()));
             vbPlayers.getChildren().add(hbLobbyButtons);
             lvPlayers.getItems().add(client.getUsername());
-            btnLeaveLobby.setOnAction(e -> client.sendCommand("leave"));
+            btnLeaveLobby.setOnAction(e -> client.sendRequest("leave"));
             lblLobbyName.setText(lobbyName);
+            btnReady.setOnAction(e -> setReadyEvent());
         });
     }
 
@@ -134,6 +135,13 @@ public class ClientGUI extends Application {
             btnPrivate.setOnAction(e -> privateLobbyEvent());
             lblPlayers.setId("lblMessage");
             lblUser.setId("lblMessage");
+            btnStart.setOnAction(e -> client.sendRequest("start"));
+        });
+    }
+
+    public void setGameScene() {
+        Platform.runLater(() -> {
+            root.getChildren().clear();
         });
     }
 
@@ -205,7 +213,7 @@ public class ClientGUI extends Application {
         if (lobbyName.isEmpty())
             lblStartError.setText("Fill in lobby name field!");
         else
-            client.sendCommand("create_lobby " + lobbyName);
+            client.sendRequest("create_lobby " + lobbyName);
     }
 
 
@@ -213,7 +221,7 @@ public class ClientGUI extends Application {
         if (lobbyName == null)
             lblStartError.setText("Lobby is not selected!");
         else
-            client.sendCommand("join " + lobbyName);
+            client.sendRequest("join " + lobbyName);
     }
 
 
@@ -234,10 +242,10 @@ public class ClientGUI extends Application {
 
     private void privateLobbyEvent() {
         if (btnPrivate.getText().equals("Set private")) {
-            client.sendCommand("set_private");
+            client.sendRequest("set_private");
             btnPrivate.setText("Set public");
         } else {
-            client.sendCommand("set_public");
+            client.sendRequest("set_public");
             btnPrivate.setText("Set private");
         }
     }
@@ -246,14 +254,25 @@ public class ClientGUI extends Application {
         if (username == null)
             lblLobbyError.setText("User is not selected!");
         else
-            client.sendCommand("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
+            client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
+
+    private void setReadyEvent() {
+        if (btnReady.getText().equals("Ready")) {
+            client.sendRequest("ready true");
+            btnReady.setText("Not ready");
+        } else {
+            client.sendRequest("ready false");
+            btnReady.setText("Ready");
+        }
+    }
+
 
     public void removePlayerFromList(String username) {
         Platform.runLater(() -> lvPlayers.getItems().remove(username));
     }
 
-    public void showAlert(String lobbyName, String username) {
+    public void showInviteAlert(String lobbyName, String username) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("UNO INVITE");
@@ -267,10 +286,10 @@ public class ClientGUI extends Application {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == btnAccept) {
-                    client.sendCommand("accept " + lobbyName);
+                    client.sendRequest("accept " + lobbyName);
                     alert.close();
                 } else if (response == btnDecline) {
-                    client.sendCommand("decline " + lobbyName);
+                    client.sendRequest("decline " + lobbyName);
                     alert.close();
                 }
             });

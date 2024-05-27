@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.IllegalFormatCodePointException;
 
 public class UserThread extends Thread {
     private String username;
@@ -73,7 +72,7 @@ public class UserThread extends Thread {
                 if (userInput == null || userInput.equals("exit"))
                     break;
 
-                executeCommand(userInput);
+                handleRequest(userInput);
             }
         } catch (IOException e) {
             server.removeUser(this);
@@ -81,7 +80,7 @@ public class UserThread extends Thread {
         }
     }
 
-    private void executeCommand(String command) throws IOException {
+    private void handleRequest(String command) throws IOException {
         String[] parts = command.split(" ");
 
         switch (parts[0]) {
@@ -113,7 +112,7 @@ public class UserThread extends Thread {
                 leaveLobbyHandler();
                 break;
             case "ready":
-                ready = true;
+                this.ready = parts[1].equals("true");
                 break;
             case "start":
                 startGameHandler();
@@ -235,18 +234,26 @@ public class UserThread extends Thread {
     }
 
     private synchronized void startGameHandler() {
-        if (!server.isAdmin(username))
-            sendMessage("Only admin can start the game!");
-        else if (lobby.notEnoughPlayers())
-            sendMessage("You need at least 2 players to players to play!");
+        if (lobby.notEnoughPlayers())
+            sendMessage("You need at least 2 players to start the game!");
         else if (!lobby.arePlayersReady())
             sendMessage("Players are not ready!");
         else {
-            lobby.setInGamePlayers();
-            sendMessage("Game is starting...");
-            server.broadcastToLobby(this, lobby, "Game is starting...");
-            lobby.start();
+            sendMessage("START");
+            server.broadcastToLobby(this, lobby, "START");
         }
+//        if (!server.isAdmin(username))
+//            sendMessage("Only admin can start the game!");
+//        else if (lobby.notEnoughPlayers())
+//            sendMessage("You need at least 2 players to players to play!");
+//        else if (!lobby.arePlayersReady())
+//            sendMessage("Players are not ready!");
+//        else {
+//            lobby.setInGamePlayers();
+//            sendMessage("Game is starting...");
+//            server.broadcastToLobby(this, lobby, "Game is starting...");
+//            lobby.start();
+//        }
     }
 
     private void playHandler(String move) {
