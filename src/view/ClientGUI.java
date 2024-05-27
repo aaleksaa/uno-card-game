@@ -106,7 +106,7 @@ public class ClientGUI extends Application {
         });
     }
 
-    public void setLobbyScene() {
+    public void setLobbyScene(String lobbyName) {
         Platform.runLater(() -> {
             root.getChildren().clear();
             lblMessage.setText("");
@@ -117,6 +117,7 @@ public class ClientGUI extends Application {
             vbPlayers.getChildren().add(hbLobbyButtons);
             lvPlayers.getItems().add(client.getUsername());
             btnLeaveLobby.setOnAction(e -> client.sendCommand("leave"));
+            lblLobbyName.setText(lobbyName);
         });
     }
 
@@ -227,8 +228,7 @@ public class ClientGUI extends Application {
         if (success.equals("false"))
             Platform.runLater(() -> lblStartError.setText(lobbyName + " is private!"));
         else {
-            setLobbyScene();
-            lblLobbyName.setText(lobbyName);
+            setLobbyScene(lobbyName);
         }
     }
 
@@ -267,10 +267,11 @@ public class ClientGUI extends Application {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == btnAccept) {
-                    client.sendCommand("accept " + lblLobbyName.getText());
+                    client.sendCommand("accept " + lobbyName);
                     alert.close();
                 } else if (response == btnDecline) {
-                    System.out.println("Invite declined");
+                    client.sendCommand("decline " + lobbyName);
+                    alert.close();
                 }
             });
         });

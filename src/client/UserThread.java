@@ -18,7 +18,6 @@ public class UserThread extends Thread {
     private BufferedReader fromUser;
     private PrintWriter toUser;
     private Lobby lobby;
-    private boolean hasInvite;
     private boolean ready;
     private boolean inLobby;
     private boolean inGame;
@@ -86,9 +85,6 @@ public class UserThread extends Thread {
         String[] parts = command.split(" ");
 
         switch (parts[0]) {
-//            case "view_users":
-//                sendMessage(server.getConnectedUsers());
-//                break;
             case "view_lobbies":
                 sendMessage(server.getLobbies());
                 break;
@@ -194,7 +190,12 @@ public class UserThread extends Thread {
 
     private void invitePlayerHandler(String lobbyName, String sender, String receiver) {
         UserThread user = server.getUserByUsername(receiver);
-        server.broadcast(user, "INVITE " + lobbyName + " " + sender);
+        Lobby lobby = server.getLobbyByName(lobbyName);
+
+        if (lobby.getPlayers().contains(user))
+            sendMessage(receiver + " is already in lobby!");
+        else
+            server.broadcast(user, "INVITE " + lobbyName + " " + sender);
     }
 
     private void acceptInviteHandler(String lobbyName) {
@@ -205,23 +206,12 @@ public class UserThread extends Thread {
 
         server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
         server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
-        //        if (!hasInvite)
-//            sendMessage("You don't have any invites!");
-//        else {
-//            Lobby lobby = server.getLobbyByName(lobbyName);
-//            lobby.addPlayer(this);
-//            this.lobby = lobby;
-//
-//            sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
-//            server.broadcastToLobby(this, lobby, this.username + " joined!");
-//        }
+        sendMessage("ACCEPT " + lobbyName);
+        sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
     }
 
     private void declineInviteHandler(String lobbyName) {
-        if (!hasInvite)
-            sendMessage("You don't have any invites!");
-        else
-            server.broadcastToLobby(this, server.getLobbyByName(lobbyName),username + " declined invite!");
+        server.broadcastToLobby(this, server.getLobbyByName(lobbyName), username + " declined invite!");
     }
 
     private void leaveLobbyHandler() {

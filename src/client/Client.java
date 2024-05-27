@@ -102,12 +102,9 @@ public class Client extends Thread {
             case "LEAVE":
                 clientGUI.removePlayerFromList(parts[1]);
                 break;
-//            case "ACCEPT":
-//                clientGUI.showAlert(response);
-//                break;
-//            case "DECLINE":
-//                clientGUI.showAlert(response);
-//                break;
+            case "ACCEPT":
+                clientGUI.setLobbyScene(parts[1]);
+                break;
             default:
                 clientGUI.showMessageLabel(response);
                 break;
