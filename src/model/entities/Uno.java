@@ -163,7 +163,7 @@ public class Uno {
         for (UserThread player : queue) {
             List<Card> cards = new ArrayList<>();
 
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 7; i++) {
                 cards.add(deck.dealCard());
                 deck.removeCardFromDeck();
             }

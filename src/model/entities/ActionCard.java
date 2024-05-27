@@ -12,7 +12,7 @@ public class ActionCard extends Card {
 
     @Override
     public String toString() {
-        return color + " - " + cardType;
+        return color + "-" + cardType;
     }
 
     @Override

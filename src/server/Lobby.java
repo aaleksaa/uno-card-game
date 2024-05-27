@@ -27,9 +27,8 @@ public class Lobby {
     public synchronized void start() {
         uno = new Uno(server, this, players);
 
-        server.broadcastInGame(this, uno.getCurrentStatus());
         for (UserThread player : players)
-            player.sendMessage(player.getDeck().toString());
+            player.sendMessage("CARDS " + player.getDeck().getCardsString());
     }
 
     public Uno getUno() {

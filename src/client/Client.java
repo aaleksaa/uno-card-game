@@ -108,6 +108,9 @@ public class Client extends Thread {
             case "START":
                 clientGUI.setGameScene();
                 break;
+            case "CARDS":
+                clientGUI.setCards(response);
+                break;
             default:
                 clientGUI.showMessageLabel(response);
                 break;

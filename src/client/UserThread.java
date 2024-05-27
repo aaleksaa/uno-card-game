@@ -241,6 +241,7 @@ public class UserThread extends Thread {
         else {
             sendMessage("START");
             server.broadcastToLobby(this, lobby, "START");
+            lobby.start();
         }
 //        if (!server.isAdmin(username))
 //            sendMessage("Only admin can start the game!");

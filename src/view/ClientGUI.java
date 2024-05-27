@@ -7,6 +7,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -53,6 +55,8 @@ public class ClientGUI extends Application {
     private final VBox vbInvite = new VBox(10, vbUsers, btnInvite);
     private final HBox hbLobby = new HBox(150, vbPlayers, vbInvite);
     private final Label lblLobbyError = new Label();
+    // Game scene components
+    private final HBox hbCards = new HBox(10);
 
 
     @Override
@@ -106,6 +110,18 @@ public class ClientGUI extends Application {
         });
     }
 
+    public void setCards(String cards) {
+        Platform.runLater(() -> {
+            String[] parts = cards.split(" ");
+            for (int i = 1; i < parts.length; i++) {
+                ImageView iv = new ImageView(new Image("file:images/cards/" + parts[i] + ".png"));
+                iv.setFitWidth(100);
+                iv.setFitHeight(200);
+                hbCards.getChildren().add(iv);
+            }
+        });
+    }
+
     public void setLobbyScene(String lobbyName) {
         Platform.runLater(() -> {
             root.getChildren().clear();
@@ -142,6 +158,7 @@ public class ClientGUI extends Application {
     public void setGameScene() {
         Platform.runLater(() -> {
             root.getChildren().clear();
+            root.getChildren().add(hbCards);
         });
     }
 

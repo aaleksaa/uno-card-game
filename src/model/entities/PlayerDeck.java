@@ -33,6 +33,15 @@ public class PlayerDeck {
         numberOfCards++;
     }
 
+    public String getCardsString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (Card card : cards)
+            sb.append(card).append(" ");
+
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
         return cards.toString();
