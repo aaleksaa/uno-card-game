@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.IllegalFormatCodePointException;
 
 public class UserThread extends Thread {
     private String username;
@@ -75,33 +76,9 @@ public class UserThread extends Thread {
 
                 executeCommand(userInput);
             }
-//            username = fromUser.readLine();
-//
-//            if (!server.isUsernameAvailable(username))
-//                toUser.println("Username " + username + " is taken! Try again.");
-//            else {
-//                sendMessage("Welcome " + username + "! Type \"help\" for more info!");
-//                server.addNewUser(this);
-//                server.broadcastToAll(this, "User " + username + " connected!");
-//
-//                String userInput;
-//                do {
-//                    userInput = fromUser.readLine();
-//                    executeCommand(userInput);
-//                } while (!userInput.equals("exit"));
-//
-//                server.broadcastToAll(this, "User " + username + " disconnected!");
-//            }
         } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
             server.removeUser(this);
-
-            try {
-                socket.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            close();
         }
     }
 
@@ -109,12 +86,6 @@ public class UserThread extends Thread {
         String[] parts = command.split(" ");
 
         switch (parts[0]) {
-            case "help":
-                sendMessage(server.listCommands());
-                break;
-            case "options":
-                sendMessage(server.listLobbyCommands());
-                break;
 //            case "view_users":
 //                sendMessage(server.getConnectedUsers());
 //                break;
@@ -131,7 +102,7 @@ public class UserThread extends Thread {
                 lobby.setPrivateLobby(true);
                 break;
             case "invite":
-                invitePlayerHandler(parts[1]);
+                invitePlayerHandler(parts[1], parts[2], parts[3]);
                 break;
             case "accept":
                 acceptInviteHandler(parts[1]);
@@ -155,7 +126,7 @@ public class UserThread extends Thread {
                 playHandler(parts[1]);
                 break;
             case "username":
-                checkUsername(parts[1]);
+                handleAvailableUsername(parts[1]);
                 break;
         }
     }
@@ -166,13 +137,13 @@ public class UserThread extends Thread {
 
     private void createLobbyHandler(String lobbyName) {
         if (!server.isLobbyNameAvailable(lobbyName))
-            sendMessage("create_lobby no " + lobbyName);
+            sendMessage("CREATE_LOBBY false " + lobbyName);
         else {
-            sendMessage("create_lobby yes " + lobbyName);
+            sendMessage("CREATE_LOBBY true " + lobbyName);
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
             server.broadcastToAll(this, username + " created new lobby!");
-            server.broadcastToAll(this, "lobby_show " + lobbyName);
+            server.broadcastToAll(this, "NEW_LOBBY " + lobbyName);
             this.ready = true;
         }
     }
@@ -180,56 +151,70 @@ public class UserThread extends Thread {
     private void joinLobbyHandler(String lobbyName) {
         Lobby lobby = server.getLobbyByName(lobbyName);
 
-        if (lobby == null)
-            sendMessage("Lobby " + lobbyName + " does not exist!");
+        if (lobby.isPrivateLobby())
+            sendMessage("JOIN false " + lobbyName);
         else {
-            if (lobby.isPrivateLobby())
-                sendMessage("You can't join private lobby!");
-            else {
-                lobby.addPlayer(this);
-                this.lobby = lobby;
-                sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
-                server.broadcastToLobby(this, lobby, this.username + " joined!");
-            }
+            lobby.addPlayer(this);
+            this.lobby = lobby;
+
+            sendMessage("JOIN true " + lobbyName);
+
+            sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
+            server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
+            server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
         }
     }
 
-    private void checkUsername(String username) {
+    private void handleAvailableUsername(String username) {
         if (!server.isUsernameAvailable(username))
-            sendMessage("username no " + username);
+            sendMessage("USERNAME false " + username);
         else {
             server.addNewUser(this);
-            sendMessage("username yes " + username);
+            sendMessage("USERNAME true " + username);
+
             server.broadcastToAll(this, username + " joined server!");
-            sendMessage("users " + server.getConnectedUsers(this));
-            server.broadcastToAll(this, "connect " + username);
+            sendMessage("VIEW_USERS " + server.getConnectedUsers(this));
+            sendMessage("VIEW_LOBBIES " + server.getLobbies());
+
+            server.broadcastToAll(this, "NEW_USER " + username);
             this.username = username;
         }
     }
 
-
-    private void invitePlayerHandler(String username) {
-        UserThread user = server.getUserByUsername(username);
-
-        if (user != null) {
-            server.broadcast(user, this.username + " has sent you an invite! Type accept/decline " + lobby.getLobbyName() + ".");
-            user.hasInvite = true;
+    private void close() {
+        try {
+            socket.close();
+            fromUser.close();
+            toUser.close();
+        } catch (IOException e) {
+            System.err.println("Error with closing resources!");
         }
-        else
-            sendMessage(username + " is offline!");
+    }
+
+
+    private void invitePlayerHandler(String lobbyName, String sender, String receiver) {
+        UserThread user = server.getUserByUsername(receiver);
+        server.broadcast(user, "INVITE " + lobbyName + " " + sender);
     }
 
     private void acceptInviteHandler(String lobbyName) {
-        if (!hasInvite)
-            sendMessage("You don't have any invites!");
-        else {
-            Lobby lobby = server.getLobbyByName(lobbyName);
-            lobby.addPlayer(this);
-            this.lobby = lobby;
+        Lobby lobby = server.getLobbyByName(lobbyName);
+        lobby.addPlayer(this);
+        this.lobby = lobby;
 
-            sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
-            server.broadcastToLobby(this, lobby, this.username + " joined!");
-        }
+
+        server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
+        server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
+        //        if (!hasInvite)
+//            sendMessage("You don't have any invites!");
+//        else {
+//            Lobby lobby = server.getLobbyByName(lobbyName);
+//            lobby.addPlayer(this);
+//            this.lobby = lobby;
+//
+//            sendMessage("You joined " + lobbyName + "! Type \"options\" for info!");
+//            server.broadcastToLobby(this, lobby, this.username + " joined!");
+//        }
     }
 
     private void declineInviteHandler(String lobbyName) {
@@ -241,18 +226,22 @@ public class UserThread extends Thread {
 
     private void leaveLobbyHandler() {
         lobby.removePlayer(this);
-        sendMessage("You left " + lobby.getLobbyName());
-
-        if (lobby.isEmpty())
-            server.removeLobby(lobby);
-        else {
-            server.broadcastToLobby(this, lobby, username + " left lobby!");
-            if (lobby.getAdmin().equals(this)) {
-                lobby.setNewAdmin();
-                lobby.getAdmin().setReady(true);
-                server.broadcastToLobby(this, lobby, lobby.getAdmin() + " is new admin!");
-            }
-        }
+        sendMessage("LEAVE_LOBBY");
+        server.broadcastToLobby(this, lobby, username + " left lobby!");
+        server.broadcastToLobby(this, lobby, "LEAVE " + username);
+//        lobby.removePlayer(this);
+//        sendMessage("You left " + lobby.getLobbyName());
+//
+//        if (lobby.isEmpty())
+//            server.removeLobby(lobby);
+//        else {
+//            server.broadcastToLobby(this, lobby, username + " left lobby!");
+//            if (lobby.getAdmin().equals(this)) {
+//                lobby.setNewAdmin();
+//                lobby.getAdmin().setReady(true);
+//                server.broadcastToLobby(this, lobby, lobby.getAdmin() + " is new admin!");
+//            }
+//        }
     }
 
     private synchronized void startGameHandler() {

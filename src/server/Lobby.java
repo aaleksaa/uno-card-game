@@ -86,16 +86,9 @@ public class Lobby {
         this.privateLobby = privateLobby;
     }
 
-    private String privateLobbyInfo() {
-        return "Private - " + lobbyName;
-   }
-
-    private String publicLobbyInfo() {
-        return "Public - " + lobbyName + " Players: " + players;
-   }
 
     @Override
     public String toString() {
-        return isPrivateLobby() ? privateLobbyInfo() : publicLobbyInfo();
+        return lobbyName;
     }
 }

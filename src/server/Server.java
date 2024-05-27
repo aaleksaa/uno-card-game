@@ -70,6 +70,17 @@ public class Server {
         }
     }
 
+    public String getPlayersInLobby(UserThread user, Lobby lobby) {
+        synchronized (lobby.getPlayers()) {
+            StringBuilder sb = new StringBuilder();
+            for (UserThread u : lobby.getPlayers())
+                if (u != user)
+                    sb.append(u.getUsername()).append(" ");
+
+            return sb.toString();
+        }
+    }
+
     public UserThread getUserByUsername(String username) {
         for (UserThread user : users)
             if (user.getUsername().equals(username))
@@ -93,8 +104,11 @@ public class Server {
 
     public String getLobbies() {
         synchronized (lobbies) {
-            return lobbies.isEmpty() ?
-                    "There are currently no active game lobbies. Please create a new lobby to start a game." : lobbies.toString();
+            StringBuilder sb = new StringBuilder();
+            for (Lobby lobby : lobbies)
+                sb.append(lobby).append(" ");
+
+            return sb.toString();
         }
     }
 
@@ -120,38 +134,4 @@ public class Server {
         receiver.sendMessage(message);
     }
 
-    public String listLobbyCommands() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("----------------------------------------------\n");
-        sb.append("options    List commands\n");
-        sb.append("start       Start game (Admin only)\n");
-        sb.append("set_public              \tSet your lobby to public\n");
-        sb.append("set_private             \tSet your lobby to private\n");
-        sb.append("invite <username>        \tSend request\n");
-        sb.append("ready                   \tReady for game\n");
-        sb.append("leave              \tLeave lobby\n");
-        sb.append("----------------------------------------------");
-
-
-        return sb.toString();
-    }
-
-    public String listCommands() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("----------------------------------------------\n");
-        sb.append("help             \t\t\tList commands\n");
-        sb.append("view_users       \t\t\tView online users\n");
-        sb.append("view_lobbies     \t\t\tView current lobbies\n");
-        sb.append("create_lobby <lobby name> \tCreate lobby\n");
-        sb.append("accept                  \tAccept request\n");
-        sb.append("decline                 \tDecline request\n");
-        sb.append("join <lobby name>       \tJoin lobby\n");
-        sb.append("exit                    \tDisconnect\n");
-        sb.append("----------------------------------------------");
-
-
-        return sb.toString();
-    }
 }

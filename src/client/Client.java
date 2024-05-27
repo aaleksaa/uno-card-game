@@ -9,14 +9,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Client extends Thread {
     private InetAddress address;
     private int port;
     private Socket socket;
-    private BufferedReader input;
-    private PrintWriter output;
+    private BufferedReader fromServer;
+    private PrintWriter toServer;
     private String username;
     private ClientGUI clientGUI;
 
@@ -25,8 +24,8 @@ public class Client extends Thread {
             this.port = Server.PORT;
             this.address = InetAddress.getByName("localhost");
             this.socket = new Socket(address, port);
-            this.input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.output = new PrintWriter(socket.getOutputStream(), true);
+            this.fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.toServer = new PrintWriter(socket.getOutputStream(), true);
             this.clientGUI = clientGUI;
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,7 +44,7 @@ public class Client extends Thread {
     public void run() {
         try {
             while (true) {
-                String response = input.readLine();
+                String response = fromServer.readLine();
 
                 if (response == null) {
                     System.err.println("Connection lost!");
@@ -55,68 +54,73 @@ public class Client extends Thread {
                 handleResponse(response);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            close();
         }
     }
 
     public void sendCommand(String command) {
-        output.println(command);
+        toServer.println(command);
     }
 
     private void handleResponse(String response) {
         String[] parts = response.split(" ");
 
         switch (parts[0]) {
-            case "username":
-                handleUsername(parts[1], parts[2]);
+            case "USERNAME":
+                clientGUI.connectEvent(parts[1], parts[2]);
                 break;
-            case "connect":
-                handleConnect(parts[1]);
+            case "NEW_USER":
+                clientGUI.addUserToList(parts[1]);
                 break;
-            case "users":
-                handleUsers(response);
+            case "VIEW_USERS":
+                clientGUI.handleViewUsers(response);
                 break;
-            case "create_lobby":
-                handleCreateLobby(parts[1], parts[2]);
+            case "VIEW_LOBBIES":
+                clientGUI.handleViewLobbies(response);
                 break;
-            case "lobby_show":
-                handleShowLobby(parts[1]);
+            case "VIEW_PLAYERS":
+                clientGUI.handleViewPlayers(response);
                 break;
+            case "CREATE_LOBBY":
+                clientGUI.handleCreateLobby(parts[1], parts[2]);
+                break;
+            case "JOIN":
+                clientGUI.handleJoinLobby(parts[1], parts[2]);
+                break;
+            case "NEW_PLAYER_JOIN":
+                clientGUI.addPlayerToList(parts[1]);
+                break;
+            case "NEW_LOBBY":
+                clientGUI.addLobbyToList(parts[1]);
+                break;
+            case "INVITE":
+                clientGUI.showAlert(parts[1], parts[2]);
+                break;
+            case "LEAVE_LOBBY":
+                clientGUI.setStartScene();
+                break;
+            case "LEAVE":
+                clientGUI.removePlayerFromList(parts[1]);
+                break;
+//            case "ACCEPT":
+//                clientGUI.showAlert(response);
+//                break;
+//            case "DECLINE":
+//                clientGUI.showAlert(response);
+//                break;
             default:
-                clientGUI.showTest(response);
+                clientGUI.showMessageLabel(response);
                 break;
         }
     }
 
-    private void handleUsername(String valid, String username) {
-        if (valid.equals("no"))
-            clientGUI.showMessageLabel("Username " + username + " is already taken! Try again.");
-        else {
-            this.username = username;
-            clientGUI.setStartScene();
+    private void close() {
+        try {
+            socket.close();
+            fromServer.close();
+            toServer.close();
+        } catch (IOException e) {
+            System.err.println("Error with closing resources!");
         }
-    }
-
-    private void handleUsers(String users) {
-        String[] parts = users.split(" ");
-
-        for (int i = 1; i < parts.length; i++)
-            clientGUI.addUserToList(parts[i]);
-    }
-
-    private void handleConnect(String username) {
-        clientGUI.addUserToList(username);
-    }
-
-    private void handleCreateLobby(String valid, String lobbyName) {
-        if (valid.equals("no"))
-            clientGUI.showTest("ne valja!");
-        else {
-            clientGUI.addLobbyToList(lobbyName);
-        }
-    }
-
-    private void handleShowLobby(String lobbyName) {
-        clientGUI.addLobbyToList(lobbyName);
     }
 }
