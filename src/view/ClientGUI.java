@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 
@@ -17,12 +18,11 @@ public class ClientGUI extends Application {
     private Client client;
     private final VBox root = new VBox();
     // Connect window components
-    private final Label lblTitle = new Label("Welcome to UNO server");
+    private final Text txtTitle = new Text("Welcome to UNO server!");
     private final TextField tfUsername = new TextField();
-    private final Button btnJoin = new Button("Join");
+    private final Button btnConnect = new Button("Connect");
     private final Label lblConnectError = new Label();
-    private final VBox vbConnect = new VBox(20, lblTitle, tfUsername, btnJoin, lblConnectError);
-    private final HBox hbConnect = new HBox(20);
+    private final VBox vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect, lblConnectError);
     // Start window components
     private final Label lblWelcome = new Label();
     private final Label lblMessage = new Label();
@@ -62,16 +62,21 @@ public class ClientGUI extends Application {
 
         root.getChildren().add(vbConnect);
 
-        root.setAlignment(Pos.TOP_CENTER);
+        root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(20));
+        root.setId("root");
+        vbConnect.setId("vb-connect");
+        vbConnect.setAlignment(Pos.CENTER);
         tfUsername.setPromptText("Enter username...");
 
 
         Scene scene = new Scene(root, 750, 500);
+        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
+        stage.setTitle("Uno");
         stage.setScene(scene);
         stage.show();
 
-        btnJoin.setOnAction(e -> sendUsername(tfUsername));
+        btnConnect.setOnAction(e -> sendUsername(tfUsername));
     }
 
     private void sendUsername(TextField tf) {
@@ -87,6 +92,7 @@ public class ClientGUI extends Application {
     public void setStartScene() {
         Platform.runLater(() -> {
             root.getChildren().clear();
+            root.setId(null);
             root.getChildren().addAll(lblWelcome, lblMessage, vbLobbies);
             lblWelcome.setText("Welcome " + client.getUsername());
             tfCreate.setPromptText("Enter lobby name...");
@@ -127,9 +133,6 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> lblConnectError.setText(message));
     }
 
-    public void addUserToList(String username) {
-        Platform.runLater(() -> lvUsers.getItems().add(username));
-    }
 
     public void connectEvent(String success, String username) {
         if (success.equals("true")) {
@@ -141,22 +144,35 @@ public class ClientGUI extends Application {
         }
     }
 
-    public void addLobbyToList(String lobbyName) {
-        Platform.runLater(() -> lvLobbies.getItems().add(lobbyName));
+    public ListView<String> getLvLobbies() {
+        return lvLobbies;
     }
+
+    public ListView<String> getLvUsers() {
+        return lvUsers;
+    }
+
+    public ListView<String> getLvPlayers() {
+        return lvPlayers;
+    }
+
+    public void addItemToList(ListView<String> listView, String item) {
+        Platform.runLater(() -> listView.getItems().add(item));
+    }
+
 
     public void handleViewUsers(String users) {
         String[] parts = users.split(" ");
 
         for (int i = 1; i < parts.length; i++)
-            addUserToList(parts[i]);
+            addItemToList(lvUsers, parts[i]);
     }
 
     public void handleViewLobbies(String lobbies) {
         String[] parts = lobbies.split(" ");
 
         for (int i = 1; i < parts.length; i++)
-            addLobbyToList(parts[i]);
+            addItemToList(lvLobbies, parts[i]);
     }
 
     public void handleCreateLobby(String success, String lobbyName) {
@@ -188,15 +204,12 @@ public class ClientGUI extends Application {
             client.sendCommand("join " + lobbyName);
     }
 
-    public void addPlayerToList(String username) {
-        Platform.runLater(() -> lvPlayers.getItems().add(username));
-    }
 
     public void handleViewPlayers(String players) {
         String[] parts = players.split(" ");
 
         for (int i = 1; i < parts.length; i++)
-            addPlayerToList(parts[i]);
+            addItemToList(lvPlayers, parts[i]);
     }
 
     public void handleJoinLobby(String success, String lobbyName) {
@@ -243,7 +256,6 @@ public class ClientGUI extends Application {
                     client.sendCommand("accept " + lblLobbyName.getText());
                     alert.close();
                 } else if (response == btnDecline) {
-                    // Akcija za Decline dugme
                     System.out.println("Invite declined");
                 }
             });

@@ -1,0 +1,40 @@
+#root {
+    -fx-background-image: url("file:images/background.jpg");
+    -fx-background-size: cover;
+}
+
+#vb-connect Text {
+    -fx-font-weight: bold;
+    -fx-font-size: 30px;
+    -fx-fill: #FFFFFF;
+}
+
+#vb-connect TextField {
+    -fx-padding: 5px;
+    -fx-background-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: #FFFFFF;
+    -fx-max-width: 350px;
+    -fx-font-size: 15px;
+    -fx-text-fill: #FFFFFF;
+    -fx-prompt-text-fill: #FFFFFF;
+}
+
+#vb-connect Button {
+    -fx-padding: 5px 15px 5px 15px;
+    -fx-font-size: 18px;
+    -fx-background-color: transparent;
+    -fx-text-fill: #FFFFFF;
+    -fx-border-color: #FFFFFF;
+    -fx-border-width: 2;
+}
+
+#vb-connect Button:hover {
+    -fx-cursor: hand;
+}
+
+#vb-connect Label {
+    -fx-font-weight: bold;
+    -fx-text-fill: red;
+    -fx-font-size: 20px;
+}
