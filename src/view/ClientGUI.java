@@ -16,7 +16,7 @@ import javafx.stage.Stage;
 
 public class ClientGUI extends Application {
     private Client client;
-    private final VBox root = new VBox();
+    private final VBox root = new VBox(10);
     // Connect window components
     private final Text txtTitle = new Text("Welcome to UNO server!");
     private final TextField tfUsername = new TextField();
@@ -25,7 +25,7 @@ public class ClientGUI extends Application {
     private final VBox vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect, lblConnectError);
     // Start window components
     private final Label lblMessage = new Label();
-    private final Label lblLobby = new Label("Current lobbies:");
+    private final Label lblLobby = new Label("Current lobbies");
     private final ListView<String> lvLobbies = new ListView<>();
     private final Button btnCreateLobby = new Button("Create lobby");
     private final Button btnJoinLobby = new Button("Join lobby");
@@ -35,7 +35,7 @@ public class ClientGUI extends Application {
     private final VBox vbLobbies = new VBox(20, lblLobby, lvLobbies, hbCreateJoinLobby, lblStartError);
     // Lobby scene components
     private final Label lblLobbyName = new Label();
-    private final Label lblUser = new Label("Users:");
+    private final Label lblUser = new Label("Online users");
     private final ListView<String> lvUsers = new ListView<>();
     private final VBox vbUsers = new VBox(5, lblUser, lvUsers);
     private final Label lblPlayers = new Label("Players");
@@ -52,6 +52,7 @@ public class ClientGUI extends Application {
     private final Button btnInvite = new Button("Invite");
     private final VBox vbInvite = new VBox(10, vbUsers, btnInvite);
     private final HBox hbLobby = new HBox(150, vbPlayers, vbInvite);
+    private final Label lblLobbyError = new Label();
 
 
     @Override
@@ -68,6 +69,7 @@ public class ClientGUI extends Application {
         vbConnect.setAlignment(Pos.CENTER);
         tfUsername.setPromptText("Enter username...");
         lblMessage.setId("lblMessage");
+        lblLobbyError.setId("error");
 
 
         Scene scene = new Scene(root, 750, 500);
@@ -96,7 +98,7 @@ public class ClientGUI extends Application {
             root.getChildren().addAll(lblMessage, vbLobbies);
             tfCreate.setPromptText("Enter lobby name...");
             btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate));
-            vbLobbies.setId("lobbies");
+            vbLobbies.setId("start-lobby");
             btnJoinLobby.setOnAction(e -> joinLobbyEvent(lvLobbies.getSelectionModel().getSelectedItem()));
             vbLobbies.setAlignment(Pos.TOP_LEFT);
             lblLobby.setId("lblLobby");
@@ -108,7 +110,9 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> {
             root.getChildren().clear();
             lblMessage.setText("");
-            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby);
+            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby, lblLobbyError);
+            lblLobbyName.setId("lblLobby");
+            hbLobby.setId("start-lobby");
             btnInvite.setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem()));
             vbPlayers.getChildren().add(hbLobbyButtons);
             lvPlayers.getItems().add(client.getUsername());
@@ -120,11 +124,15 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> {
             root.getChildren().clear();
             lblMessage.setText("");
-            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby);
+            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby, lblLobbyError);
+            lblLobbyName.setId("lblLobby");
+            hbLobby.setId("start-lobby");
             vbPlayers.getChildren().add(hbAdminLobbyButtons);
             btnInvite.setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem()));
             lvPlayers.getItems().add(client.getUsername());
             btnPrivate.setOnAction(e -> privateLobbyEvent());
+            lblPlayers.setId("lblMessage");
+            lblUser.setId("lblMessage");
         });
     }
 
@@ -235,7 +243,10 @@ public class ClientGUI extends Application {
     }
 
     public void invitePlayerEvent(String username) {
-        client.sendCommand("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
+        if (username == null)
+            lblLobbyError.setText("User is not selected!");
+        else
+            client.sendCommand("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
 
     public void removePlayerFromList(String username) {
