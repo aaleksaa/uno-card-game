@@ -71,7 +71,6 @@ public class Client extends Thread {
                 break;
             case "NEW_USER":
                 clientGUI.addItemToList(clientGUI.getLvUsers(), parts[1]);
-//                clientGUI.addUserToList(parts[1]);
                 break;
             case "VIEW_USERS":
                 clientGUI.handleViewUsers(response);
@@ -89,11 +88,9 @@ public class Client extends Thread {
                 clientGUI.handleJoinLobby(parts[1], parts[2]);
                 break;
             case "NEW_PLAYER_JOIN":
-//                clientGUI.addPlayerToList(parts[1]);
                 clientGUI.addItemToList(clientGUI.getLvPlayers(), parts[1]);
                 break;
             case "NEW_LOBBY":
-//                clientGUI.addLobbyToList(parts[1]);
                 clientGUI.addItemToList(clientGUI.getLvLobbies(), parts[1]);
                 break;
             case "INVITE":

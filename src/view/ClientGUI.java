@@ -24,16 +24,15 @@ public class ClientGUI extends Application {
     private final Label lblConnectError = new Label();
     private final VBox vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect, lblConnectError);
     // Start window components
-    private final Label lblWelcome = new Label();
     private final Label lblMessage = new Label();
-    private final Label lblLobby = new Label("Lobbies:");
+    private final Label lblLobby = new Label("Current lobbies:");
     private final ListView<String> lvLobbies = new ListView<>();
     private final Button btnCreateLobby = new Button("Create lobby");
     private final Button btnJoinLobby = new Button("Join lobby");
     private final TextField tfCreate = new TextField();
-    private final HBox hbCreateJoinLobby = new HBox(10, tfCreate, btnCreateLobby, btnJoinLobby);
+    private final HBox hbCreateJoinLobby = new HBox(20, tfCreate, btnCreateLobby, btnJoinLobby);
     private final Label lblStartError = new Label();
-    private final VBox vbLobbies = new VBox(5, lblLobby, lvLobbies, hbCreateJoinLobby, lblStartError);
+    private final VBox vbLobbies = new VBox(20, lblLobby, lvLobbies, hbCreateJoinLobby, lblStartError);
     // Lobby scene components
     private final Label lblLobbyName = new Label();
     private final Label lblUser = new Label("Users:");
@@ -68,6 +67,7 @@ public class ClientGUI extends Application {
         vbConnect.setId("vb-connect");
         vbConnect.setAlignment(Pos.CENTER);
         tfUsername.setPromptText("Enter username...");
+        lblMessage.setId("lblMessage");
 
 
         Scene scene = new Scene(root, 750, 500);
@@ -92,12 +92,15 @@ public class ClientGUI extends Application {
     public void setStartScene() {
         Platform.runLater(() -> {
             root.getChildren().clear();
-            root.setId(null);
-            root.getChildren().addAll(lblWelcome, lblMessage, vbLobbies);
-            lblWelcome.setText("Welcome " + client.getUsername());
+            root.setId("start");
+            root.getChildren().addAll(lblMessage, vbLobbies);
             tfCreate.setPromptText("Enter lobby name...");
             btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate));
+            vbLobbies.setId("lobbies");
             btnJoinLobby.setOnAction(e -> joinLobbyEvent(lvLobbies.getSelectionModel().getSelectedItem()));
+            vbLobbies.setAlignment(Pos.TOP_LEFT);
+            lblLobby.setId("lblLobby");
+            lblStartError.setId("error");
         });
     }
 
@@ -191,7 +194,7 @@ public class ClientGUI extends Application {
         String lobbyName = tf.getText();
 
         if (lobbyName.isEmpty())
-            lblStartError.setText("Enter lobby name");
+            lblStartError.setText("Fill in lobby name field!");
         else
             client.sendCommand("create_lobby " + lobbyName);
     }
@@ -199,7 +202,7 @@ public class ClientGUI extends Application {
 
     private void joinLobbyEvent(String lobbyName) {
         if (lobbyName == null)
-            lblStartError.setText("Select lobby!");
+            lblStartError.setText("Lobby is not selected!");
         else
             client.sendCommand("join " + lobbyName);
     }
