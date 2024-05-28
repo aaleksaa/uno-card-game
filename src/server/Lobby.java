@@ -14,6 +14,7 @@ public class Lobby {
     private String lobbyName;
     private Set<UserThread> players;
     private boolean privateLobby;
+    private boolean gameStarted;
     private Uno uno;
 
     public Lobby(Server server, UserThread admin, String lobbyName) {
@@ -24,11 +25,18 @@ public class Lobby {
         players.add(admin);
     }
 
-    public synchronized void start() {
+    public void start() {
         uno = new Uno(server, this, players);
 
         for (UserThread player : players)
             player.sendMessage("CARDS " + player.getDeck().getCardsString());
+        gameStarted = true;
+        server.broadcastInGame(this, "BLOCK");
+        uno.getPlayerOnMove().sendMessage("UNBLOCK " + uno.getPlayerOnMove().getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), false));
+    }
+
+    public boolean isGameStarted() {
+        return gameStarted;
     }
 
     public Uno getUno() {

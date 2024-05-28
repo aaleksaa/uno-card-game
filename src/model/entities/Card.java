@@ -32,4 +32,17 @@ public abstract class Card {
         else
             return new ActionCard(inputColor, inputType);
     }
+
+    public static boolean compareCards(Card card1, Card card2) {
+        if (card1.getColor() == card2.getColor())
+            return true;
+        else if (card1 instanceof WildCard)
+            return true;
+        else if (card1 instanceof NumberCard numberCard1 && card2 instanceof NumberCard numberCard2)
+            return numberCard1.getValue() == numberCard2.getValue();
+        else if (card1 instanceof ActionCard actionCard1 && card2 instanceof ActionCard actionCard2)
+            return actionCard1.getCardType() == actionCard2.getCardType();
+        else
+            return false;
+    }
 }

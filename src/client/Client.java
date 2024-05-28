@@ -66,6 +66,9 @@ public class Client extends Thread {
         String[] parts = response.split(" ");
 
         switch (parts[0]) {
+            case "ERROR_START":
+                clientGUI.showErrorLabel(clientGUI.getLblStartError(), response.substring(response.indexOf(' ')));
+                break;
             case "USERNAME":
                 clientGUI.connectEvent(parts[1], parts[2]);
                 break;
@@ -85,7 +88,7 @@ public class Client extends Thread {
                 clientGUI.handleCreateLobby(parts[1], parts[2]);
                 break;
             case "JOIN":
-                clientGUI.handleJoinLobby(parts[1], parts[2]);
+                clientGUI.setLobbyScene(parts[1]);
                 break;
             case "NEW_PLAYER_JOIN":
                 clientGUI.addItemToList(clientGUI.getLvPlayers(), parts[1]);
@@ -110,6 +113,24 @@ public class Client extends Thread {
                 break;
             case "CARDS":
                 clientGUI.setCards(response);
+                break;
+            case "CURRENT":
+                clientGUI.setCurrent(parts[1]);
+                break;
+            case "BLOCK":
+                clientGUI.disableCards();
+                break;
+            case "UNBLOCK":
+                clientGUI.enableCards(response);
+                break;
+            case "STATUS":
+                clientGUI.gameStatus(response);
+                break;
+            case "DRAW":
+                clientGUI.addCards(response);
+                break;
+            case "CHANGE":
+                clientGUI.showChangeColorAlert();
                 break;
             default:
                 clientGUI.showMessageLabel(response);

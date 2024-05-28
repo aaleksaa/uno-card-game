@@ -50,7 +50,7 @@ public class Deck {
 
     private void addActionCards(Color color) {
         for (int i = 0; i < 2; i++) {
-           // addCardToDeck(new ActionCard(color, CardType.REVERSE));
+//            addCardToDeck(new ActionCard(color, CardType.REVERSE));
             addCardToDeck(new ActionCard(color, CardType.SKIP));
             addCardToDeck(new ActionCard(color, CardType.DRAW_TWO));
         }

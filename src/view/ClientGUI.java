@@ -5,6 +5,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -14,6 +15,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Paths;
 
 
 public class ClientGUI extends Application {
@@ -56,7 +60,13 @@ public class ClientGUI extends Application {
     private final HBox hbLobby = new HBox(150, vbPlayers, vbInvite);
     private final Label lblLobbyError = new Label();
     // Game scene components
+    private final Label lblUsername = new Label();
+    private final Label lblGame = new Label();
+    private final ImageView ivCurrent = new ImageView();
+    private final ImageView ivBack = new ImageView(new Image("file:images/cards/back.png"));
+    private final HBox hbDeck = new HBox(20, ivCurrent, ivBack);
     private final HBox hbCards = new HBox(10);
+    private final VBox vbGame = new VBox(10, lblUsername, lblGame, hbDeck, hbCards);
 
 
     @Override
@@ -76,7 +86,7 @@ public class ClientGUI extends Application {
         lblLobbyError.setId("error");
 
 
-        Scene scene = new Scene(root, 750, 500);
+        Scene scene = new Scene(root, 850, 600);
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
         stage.setTitle("Uno");
         stage.setScene(scene);
@@ -103,7 +113,7 @@ public class ClientGUI extends Application {
             tfCreate.setPromptText("Enter lobby name...");
             btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate));
             vbLobbies.setId("start-lobby");
-            btnJoinLobby.setOnAction(e -> joinLobbyEvent(lvLobbies.getSelectionModel().getSelectedItem()));
+            btnJoinLobby.setOnAction(e -> client.sendRequest("join " + lvLobbies.getSelectionModel().getSelectedItem()));
             vbLobbies.setAlignment(Pos.TOP_LEFT);
             lblLobby.setId("lblLobby");
             lblStartError.setId("error");
@@ -115,9 +125,18 @@ public class ClientGUI extends Application {
             String[] parts = cards.split(" ");
             for (int i = 1; i < parts.length; i++) {
                 ImageView iv = new ImageView(new Image("file:images/cards/" + parts[i] + ".png"));
-                iv.setFitWidth(100);
-                iv.setFitHeight(200);
-                hbCards.getChildren().add(iv);
+                iv.setFitWidth(80);
+                iv.setFitHeight(150);
+                Button btnCard = new Button();
+                btnCard.setGraphic(iv);
+                String card = parts[i];
+                hbCards.getChildren().add(btnCard);
+
+                if (!btnCard.isDisabled())
+                    btnCard.setOnAction(e -> {
+                        client.sendRequest("play " + card);
+                        hbCards.getChildren().remove(btnCard);
+                    });
             }
         });
     }
@@ -135,6 +154,32 @@ public class ClientGUI extends Application {
             btnLeaveLobby.setOnAction(e -> client.sendRequest("leave"));
             lblLobbyName.setText(lobbyName);
             btnReady.setOnAction(e -> setReadyEvent());
+        });
+    }
+
+    public void enableCards(String cards) {
+        Platform.runLater(() -> {
+            try {
+                String[] parts = cards.split(" ");
+
+                for (Node node : hbCards.getChildren()) {
+                    Button btn = (Button) node;
+                    ImageView iv = (ImageView) btn.getGraphic();
+                    Image img = iv.getImage();
+                    String url = img.getUrl();
+                    URL imageURL = new URL(url);
+                    String fileName = Paths.get(imageURL.getPath()).getFileName().toString();
+                    String name = fileName.substring(0, fileName.lastIndexOf('.'));
+
+                    for (int i = 1; i < parts.length; i++)
+                        if (name.equals(parts[i])) {
+                            btn.setDisable(false);
+                            break;
+                        }
+                }
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -158,8 +203,20 @@ public class ClientGUI extends Application {
     public void setGameScene() {
         Platform.runLater(() -> {
             root.getChildren().clear();
-            root.getChildren().add(hbCards);
+            root.setId("game");
+            root.getChildren().add(vbGame);
+            ivCurrent.setFitWidth(80);
+            ivCurrent.setFitHeight(150);
+            ivBack.setFitWidth(80);
+            ivBack.setFitHeight(150);
+            vbGame.setAlignment(Pos.CENTER);
+            root.setAlignment(Pos.CENTER);
+            lblUsername.setText(client.getUsername());
         });
+    }
+
+    public void setCurrent(String current) {
+        Platform.runLater(() -> ivCurrent.setImage(new Image("file:images/cards/" + current + ".png")));
     }
 
     public void showMessageLabel(String message) {
@@ -170,6 +227,13 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> lblConnectError.setText(message));
     }
 
+    public void showErrorLabel(Label lbl, String message) {
+        Platform.runLater(() -> lbl.setText(message));
+    }
+
+    public Label getLblStartError() {
+        return lblStartError;
+    }
 
     public void connectEvent(String success, String username) {
         if (success.equals("true")) {
@@ -233,12 +297,13 @@ public class ClientGUI extends Application {
             client.sendRequest("create_lobby " + lobbyName);
     }
 
-
-    private void joinLobbyEvent(String lobbyName) {
-        if (lobbyName == null)
-            lblStartError.setText("Lobby is not selected!");
-        else
-            client.sendRequest("join " + lobbyName);
+    public void disableCards() {
+        Platform.runLater(() -> {
+            for (Node node : hbCards.getChildren()) {
+                Button btn = (Button) node;
+                btn.setDisable(true);
+            }
+        });
     }
 
 
@@ -247,14 +312,6 @@ public class ClientGUI extends Application {
 
         for (int i = 1; i < parts.length; i++)
             addItemToList(lvPlayers, parts[i]);
-    }
-
-    public void handleJoinLobby(String success, String lobbyName) {
-        if (success.equals("false"))
-            Platform.runLater(() -> lblStartError.setText(lobbyName + " is private!"));
-        else {
-            setLobbyScene(lobbyName);
-        }
     }
 
     private void privateLobbyEvent() {
@@ -274,6 +331,39 @@ public class ClientGUI extends Application {
             client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
 
+    public void showChangeColorAlert() {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("UNO CHANGE COLOR");
+            alert.setHeaderText("UNO CHANGE COLOR");
+            alert.setContentText("Set new color");
+
+
+            ButtonType btnRed = new ButtonType("Red");
+            ButtonType btnYellow = new ButtonType("Yellow");
+            ButtonType btnBlue = new ButtonType("Blue");
+            ButtonType btnGreen = new ButtonType("Green");
+
+            alert.getButtonTypes().setAll(btnRed, btnYellow, btnBlue, btnGreen);
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == btnRed) {
+                    client.sendRequest("change Red");
+                    alert.close();
+                } else if (response == btnYellow) {
+                    client.sendRequest("change Yellow");
+                    alert.close();
+                } else if (response == btnBlue) {
+                    client.sendRequest("change Blue");
+                    alert.close();
+                } else if (response == btnGreen){
+                    client.sendRequest("change Green");
+                    alert.close();
+                }
+            });
+        });
+    }
+
     private void setReadyEvent() {
         if (btnReady.getText().equals("Ready")) {
             client.sendRequest("ready true");
@@ -283,6 +373,7 @@ public class ClientGUI extends Application {
             btnReady.setText("Ready");
         }
     }
+
 
 
     public void removePlayerFromList(String username) {
@@ -310,6 +401,32 @@ public class ClientGUI extends Application {
                     alert.close();
                 }
             });
+        });
+    }
+
+    public void addCards(String cards) {
+        Platform.runLater(() -> {
+            String[] parts = cards.split(" ");
+            for (int i = 1; i < parts.length; i++) {
+                ImageView iv = new ImageView(new Image("file:images/cards/" + parts[i] + ".png"));
+                iv.setFitWidth(80);
+                iv.setFitHeight(150);
+                Button btnCard = new Button();
+                btnCard.setGraphic(iv);
+                String card = parts[i];
+                hbCards.getChildren().add(btnCard);
+                btnCard.setOnAction(e -> {
+                    client.sendRequest("play " + card);
+                    hbCards.getChildren().remove(btnCard);
+                });
+            }
+        });
+    }
+
+    public void gameStatus(String status) {
+        Platform.runLater(() -> {
+            String info = status.substring(status.indexOf(' '));
+            lblGame.setText(info);
         });
     }
 }

@@ -1,5 +1,7 @@
 package model.entities;
 
+import model.enums.Color;
+
 import java.util.List;
 
 public class PlayerDeck {
@@ -38,6 +40,33 @@ public class PlayerDeck {
 
         for (Card card : cards)
             sb.append(card).append(" ");
+
+        return sb.toString();
+    }
+
+    public String availableCards(Card currentCard, Color currentColor, boolean colorChanged) {
+        StringBuilder sb = new StringBuilder();
+
+        if (!colorChanged) {
+            for (Card card : cards)
+                if (Card.compareCards(card, currentCard))
+                    sb.append(card).append(" ");
+        } else {
+            for (Card card : cards)
+                if (card.getColor() == currentColor || card instanceof WildCard)
+                    sb.append(card).append(" ");
+        }
+
+
+
+//        for (Card card : cards) {
+//            if (!colorChanged)
+//                if (Card.compareCards(card, currentCard))
+//                    sb.append(card).append(" ");
+//            else
+//                if (card.getColor() == currentColor || card instanceof WildCard)
+//                    sb.append(card).append(" ");
+//        }
 
         return sb.toString();
     }

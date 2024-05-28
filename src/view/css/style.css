@@ -3,6 +3,11 @@
     -fx-background-size: cover;
 }
 
+#game {
+    -fx-background-image: url("file:images/background1.jpg");
+    -fx-background-size: cover;
+}
+
 #vb-connect Text {
     -fx-font-weight: bold;
     -fx-font-size: 30px;
@@ -132,4 +137,18 @@ Button:hover {
 .scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
     -fx-background-color: #ffffff;
     -fx-shape: "M0,0 L5,5 L10,0 Z";
+}
+
+#game Button {
+    -fx-transition: all 0.3s ease;
+}
+
+#game Button:hover {
+    -fx-translate-y: -5px;
+}
+
+#game Label {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
 }
