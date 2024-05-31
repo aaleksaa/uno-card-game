@@ -121,6 +121,9 @@ public class UserThread extends Thread {
             case "change":
                 handleChangeColor(parts[1]);
                 break;
+            case "DRAW":
+                lobby.getUno().draw();
+                break;
         }
     }
 

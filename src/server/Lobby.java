@@ -30,9 +30,10 @@ public class Lobby {
 
         for (UserThread player : players)
             player.sendMessage("CARDS " + player.getDeck().getCardsString());
+
         gameStarted = true;
         server.broadcastInGame(this, "BLOCK");
-        uno.getPlayerOnMove().sendMessage("UNBLOCK " + uno.getPlayerOnMove().getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), false));
+        uno.getPlayerOnMove().sendMessage(uno.getPlayerOnMove().getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), false));
     }
 
     public boolean isGameStarted() {

@@ -123,14 +123,23 @@ public class Client extends Thread {
             case "UNBLOCK":
                 clientGUI.enableCards(response);
                 break;
-            case "STATUS":
-                clientGUI.gameStatus(response);
+            case "GAME_INFO":
+                clientGUI.showGameInfo(response);
                 break;
             case "DRAW":
                 clientGUI.addCards(response);
                 break;
             case "CHANGE":
                 clientGUI.showChangeColorAlert();
+                break;
+            case "NO_CARDS":
+                sendRequest("DRAW");
+                break;
+            case "FINISH":
+                clientGUI.showFinishAlert(response);
+                break;
+            case "TEST":
+                clientGUI.setStartScene();
                 break;
             default:
                 clientGUI.setTextLabel(clientGUI.getLblMessage(), response);

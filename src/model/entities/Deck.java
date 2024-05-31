@@ -16,7 +16,7 @@ public class Deck {
     }
 
     private void init() {
-        addWildCard();
+//        addWildCards();
 
         addActionCards(Color.RED);
         addActionCards(Color.YELLOW);
@@ -33,15 +33,11 @@ public class Deck {
         cards.add(card);
     }
 
-    public void removeCardFromDeck() {
-        cards.remove(0);
-    }
-
     public Card dealCard() {
-        return cards.get(0);
+        return cards.remove(0);
     }
 
-    private void addWildCard() {
+    private void addWildCards() {
         for (int i = 0; i < 4; i++) {
             addCardToDeck(new WildCard(CardType.CHANGE_COLOR));
             addCardToDeck(new WildCard(CardType.DRAW_FOUR));

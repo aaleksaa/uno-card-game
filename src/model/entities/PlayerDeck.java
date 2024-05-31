@@ -58,7 +58,7 @@ public class PlayerDeck {
                     sb.append(card).append(" ");
         }
 
-        return sb.toString();
+        return sb.toString().isEmpty() ? "NO_CARDS" : "UNBLOCK " + sb;
     }
 
     @Override

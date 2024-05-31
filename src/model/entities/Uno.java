@@ -20,10 +20,9 @@ public class Uno {
     private Card currentCard;
     private Color currentColor;
     private UserThread playerOnMove;
-    private Map<String, Integer> rankings = new TreeMap<>();
-    private Set<UserThread> players;
     private Direction direction;
     private boolean colorChanged;
+    private List<UserThread> spectators = new ArrayList<>();
 
     public static final int NUMBER_OF_CARDS = 7;
 
@@ -31,17 +30,14 @@ public class Uno {
         this.server = server;
         this.lobby = lobby;
         this.deck = new Deck();
-        this.players = players;
         this.queue.addAll(players);
+        this.test.addAll(players);
         dealCards();
-        do {
-            this.currentCard = deck.dealCard();
-        } while (!(currentCard instanceof NumberCard));
+        initCurrentCard();
         this.currentColor = currentCard.getColor();
         this.playerOnMove = queue.peek();
         this.direction = Direction.CLOCKWISE;
-        server.broadcastInGame(lobby, "CURRENT " + currentCard);
-        server.broadcastInGame(lobby, "STATUS " + getCurrentStatus());
+        sendGameInfo();
     }
 
     public Color getCurrentColor() {
@@ -55,6 +51,29 @@ public class Uno {
             direction = Direction.CLOCKWISE;
     }
 
+    private void initCurrentCard() {
+        do {
+            currentCard = deck.dealCard();
+        } while (!(currentCard instanceof NumberCard));
+    }
+
+
+    private boolean isFinished() {
+        return queue.size() == 1;
+    }
+
+    private UserThread getCurrentPlayer() {
+        if (direction == Direction.CLOCKWISE)
+            return test.pollFirst();
+        return test.pollLast();
+    }
+
+    private UserThread playerOnMove() {
+        if (direction == Direction.CLOCKWISE)
+            return test.peekFirst();
+        return null;
+    }
+
     public Deck getDeck() {
         return deck;
     }
@@ -62,7 +81,6 @@ public class Uno {
     public UserThread getPlayerOnMove() {
         return playerOnMove;
     }
-
 
     public synchronized void playMove(String move) {
         UserThread currPlayer = queue.poll();
@@ -75,14 +93,25 @@ public class Uno {
         else
             playWildCard(currPlayer, card);
 
+        deck.addCardToDeck(card);
 
-        server.broadcastInGame(lobby, "STATUS " + getCurrentStatus());
-        server.broadcastInGame(lobby, "CURRENT " + currentCard);
-        server.broadcastInGame(lobby, "BLOCK");
+        if (!isFinished()) {
+            sendGameInfo();
+            server.broadcastInGame(lobby, "BLOCK");
 
-        if (!colorChanged)
-            playerOnMove.sendMessage("UNBLOCK " + playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
+            if (!colorChanged)
+                playerOnMove.sendMessage(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
+        } else {
+            spectators.add(queue.poll());
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < spectators.size(); i++)
+                sb.append(i + 1).append(" - ").append(spectators.get(i)).append("  ");
+
+            server.broadcastInGame(lobby, "FINISH " + sb);
+        }
     }
+
     public boolean isColorChanged() {
         return colorChanged;
     }
@@ -104,7 +133,6 @@ public class Uno {
         currentColor = card.getColor();
         colorChanged = false;
 
-
         addToQueue(player);
 
         if (card.getCardType() == CardType.DRAW_TWO) {
@@ -115,6 +143,16 @@ public class Uno {
             queue.add(skippedPlayer);
             playerOnMove = queue.peek();
         }
+    }
+
+    private void sendGameInfo() {
+        StringBuilder sb = new StringBuilder();
+        for (UserThread player : queue)
+            sb.append(player.getUsername()).append(" - ").append(player.getDeck().getNumberOfCards()).append(" ");
+
+        server.broadcastInGame(lobby, "CURRENT " + currentCard);
+        server.broadcastInGame(lobby, "GAME_INFO CURR_PLAYER Current player " + playerOnMove);
+        server.broadcastInGame(lobby, "GAME_INFO CARDS_NUM " + sb);
     }
 
     private void playWildCard(UserThread player, Card card) {
@@ -134,13 +172,12 @@ public class Uno {
         if (!player.getDeck().isEmpty())
             queue.add(player);
         else
-            rankings.put(player.getUsername(), rankings.size() + 1);
+            spectators.add(player);
     }
 
 
     public void setCurrentColor(Color color) {
         this.currentColor = color;
-        server.broadcastInGame(lobby, "STATUS " + getCurrentStatus() + " Color is " + currentColor);
     }
 
 
@@ -160,31 +197,24 @@ public class Uno {
         return currentCard;
     }
 
-    public String getCurrentStatus() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("Player on the move: ").append(playerOnMove).append(" ");
-        sb.append("Number of cards ");
-
-        for (UserThread player : queue)
-            sb.append(player.getUsername()).append(" ").append(player.getDeck().getNumberOfCards()).append(", ");
-
-
-        return sb.toString();
-    }
-
-
     public void dealCards() {
         for (UserThread player : queue) {
             List<Card> cards = new ArrayList<>();
 
-            for (int i = 0; i < NUMBER_OF_CARDS; i++) {
+            for (int i = 0; i < NUMBER_OF_CARDS; i++)
                 cards.add(deck.dealCard());
-                deck.removeCardFromDeck();
-            }
 
             player.setDeck(new PlayerDeck(cards));
         }
+    }
+
+    public void draw() {
+        Card card = deck.dealCard();
+        playerOnMove.getDeck().addCard(card);
+        playerOnMove.sendMessage("DRAW " + card);
+        playerOnMove.sendMessage("BLOCK");
+        playerOnMove.sendMessage(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
+        sendGameInfo();
     }
 
     public void setCurrentCard(Card currentCard) {

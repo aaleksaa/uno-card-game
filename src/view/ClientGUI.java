@@ -61,12 +61,14 @@ public class ClientGUI extends Application {
     private final Label lblLobbyError = new Label();
     // Game scene components
     private final Label lblUsername = new Label();
+    private final Label lblCurrentPlayer = new Label();
+    private final Label lblCards = new Label();
     private final Label lblGame = new Label();
     private final ImageView ivCurrent = new ImageView();
     private final ImageView ivBack = new ImageView(new Image("file:images/cards/back.png"));
     private final HBox hbDeck = new HBox(20, ivCurrent, ivBack);
     private final HBox hbCards = new HBox(10);
-    private final VBox vbGame = new VBox(10, lblUsername, lblGame, hbDeck, hbCards);
+    private final VBox vbGame = new VBox(10, lblUsername, lblCurrentPlayer, lblCards, lblGame, hbDeck, hbCards);
 
 
     @Override
@@ -187,6 +189,11 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> lbl.setText(text));
     }
 
+
+    //-----------------------------
+    // SCENES
+    //-----------------------------
+
     public void setStartScene() {
         Platform.runLater(() -> {
             root.getChildren().clear();
@@ -292,6 +299,7 @@ public class ClientGUI extends Application {
             ivBack.setFitWidth(80);
             ivBack.setFitHeight(150);
             vbGame.setAlignment(Pos.CENTER);
+            hbDeck.setAlignment(Pos.CENTER);
             root.setAlignment(Pos.CENTER);
             lblUsername.setText(client.getUsername());
         });
@@ -305,6 +313,9 @@ public class ClientGUI extends Application {
         return lblMessage;
     }
 
+    public Label getLblUsername() {
+        return lblUsername;
+    }
 
     public ListView<String> getLvLobbies() {
         return lvLobbies;
@@ -434,10 +445,34 @@ public class ClientGUI extends Application {
         });
     }
 
-    public void gameStatus(String status) {
+    public void showFinishAlert(String response) {
         Platform.runLater(() -> {
-            String info = status.substring(status.indexOf(' '));
-            lblGame.setText(info);
+            String[] parts = response.split(" ", 2);
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("GAME OVER");
+            alert.setHeaderText("GAME OVER");
+            alert.setContentText(parts[1]);
+
+
+            ButtonType btnOK = new ButtonType("OK");
+
+            alert.getButtonTypes().setAll(btnOK);
+
+            alert.showAndWait().ifPresent(e -> {
+                if (e == btnOK) {
+                    setStartScene();
+                    alert.close();
+                }
+            });
         });
+    }
+
+    public void showGameInfo(String response) {
+        String[] parts = response.split(" ", 3);
+
+        if (parts[1].equals("CARDS_NUM"))
+            setTextLabel(lblCards, parts[2]);
+        else if (parts[1].equals("CURR_PLAYER"))
+            setTextLabel(lblCurrentPlayer, parts[2]);
     }
 }
