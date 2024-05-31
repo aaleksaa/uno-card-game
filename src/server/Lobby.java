@@ -49,6 +49,10 @@ public class Lobby {
         admin = iter.next();
     }
 
+    public boolean isPlayerInLobby(UserThread player) {
+        return players.contains(player);
+    }
+
     public String getLobbyName() {
         return lobbyName;
     }

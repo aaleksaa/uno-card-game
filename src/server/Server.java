@@ -88,13 +88,6 @@ public class Server {
         return null;
     }
 
-    public boolean isAdmin(String username) {
-        for (Lobby lobby : lobbies)
-            if (lobby.getAdmin().getUsername().equals(username))
-                return true;
-        return false;
-    }
-
     public Lobby getLobbyByName(String lobbyName) {
         for (Lobby lobby : lobbies)
             if (lobby.getLobbyName().equals(lobbyName))

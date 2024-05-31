@@ -85,17 +85,11 @@ public class UserThread extends Thread {
         String[] parts = command.split(" ");
 
         switch (parts[0]) {
-            case "view_lobbies":
-                sendMessage(server.getLobbies());
-                break;
             case "create_lobby":
                 createLobbyHandler(parts[1]);
                 break;
-            case "set_public":
-                lobby.setPrivateLobby(false);
-                break;
-            case "set_private":
-                lobby.setPrivateLobby(true);
+            case "PRIVATE_LOBBY":
+                lobby.setPrivateLobby(parts[1].equals("true"));
                 break;
             case "invite":
                 invitePlayerHandler(parts[1], parts[2], parts[3]);
@@ -106,20 +100,20 @@ public class UserThread extends Thread {
             case "decline":
                 declineInviteHandler(parts[1]);
                 break;
-            case "join":
+            case "JOIN":
                 handleJoinLobby(parts[1]);
                 break;
             case "leave":
                 leaveLobbyHandler();
                 break;
-            case "ready":
+            case "READY":
                 this.ready = parts[1].equals("true");
                 break;
             case "start":
                 startGameHandler();
                 break;
             case "play":
-                playHandler(parts[1]);
+                lobby.getUno().playMove(parts[1]);
                 break;
             case "username":
                 handleAvailableUsername(parts[1]);
@@ -147,8 +141,10 @@ public class UserThread extends Thread {
             sendMessage("CREATE_LOBBY false " + lobbyName);
         else {
             sendMessage("CREATE_LOBBY true " + lobbyName);
+
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
+
             server.broadcastToAll(this, username + " created new lobby!");
             server.broadcastToAll(this, "NEW_LOBBY " + lobbyName);
             this.ready = true;
@@ -157,25 +153,21 @@ public class UserThread extends Thread {
 
 
     private void handleJoinLobby(String lobbyName) {
-        if (lobbyName.equals("null"))
-            sendMessage("ERROR_START Lobby is not selected!");
+        Lobby lobby = server.getLobbyByName(lobbyName);
+
+        if (lobby.isPrivateLobby())
+            sendMessage("SHOW_LABEL START Lobby " + lobbyName + " is private!");
+        else if (lobby.isGameStarted())
+            sendMessage("SHOW_LABEL START Game started in this lobby!");
         else {
-            Lobby lobby = server.getLobbyByName(lobbyName);
+            lobby.addPlayer(this);
+            this.lobby = lobby;
 
-            if (lobby.isPrivateLobby())
-                sendMessage("ERROR_START Lobby " + lobbyName + " is private!");
-            else if (lobby.isGameStarted())
-                sendMessage("ERROR_START Game started in this lobby!");
-            else {
-                lobby.addPlayer(this);
-                this.lobby = lobby;
+            sendMessage("JOIN " + lobbyName);
+            sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
 
-                sendMessage("JOIN " + lobbyName);
-                sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
-
-                server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
-                server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
-            }
+            server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
+            server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
         }
     }
 
@@ -210,10 +202,10 @@ public class UserThread extends Thread {
         UserThread user = server.getUserByUsername(receiver);
         Lobby lobby = server.getLobbyByName(lobbyName);
 
-        if (lobby.getPlayers().contains(user))
-            sendMessage(receiver + " is already in lobby!");
+        if (lobby.isPlayerInLobby(user))
+            sendMessage("SHOW_LABEL LOBBY " + user.getUsername() + " is already in lobby!");
         else if (user.isInGame())
-            sendMessage(user.getUsername() + " is in game!");
+            sendMessage("SHOW_LABEL LOBBY " + user.getUsername() + " is currently in game!");
         else
             server.broadcast(user, "INVITE " + lobbyName + " " + sender);
     }
@@ -225,6 +217,7 @@ public class UserThread extends Thread {
 
         server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
         server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
+
         sendMessage("ACCEPT " + lobbyName);
         sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
     }
@@ -276,13 +269,6 @@ public class UserThread extends Thread {
 //            server.broadcastToLobby(this, lobby, "Game is starting...");
 //            lobby.start();
 //        }
-    }
-
-    private void playHandler(String move) {
-        if (!lobby.getUno().getPlayerOnMove().equals(this))
-            sendMessage("It's not your turn!");
-        else
-            lobby.getUno().playMove(move);
     }
 
     @Override

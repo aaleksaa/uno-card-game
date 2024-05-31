@@ -66,11 +66,11 @@ public class Client extends Thread {
         String[] parts = response.split(" ");
 
         switch (parts[0]) {
-            case "ERROR_START":
-                clientGUI.showErrorLabel(clientGUI.getLblStartError(), response.substring(response.indexOf(' ')));
+            case "SHOW_LABEL":
+                clientGUI.handleError(parts[1], response);
                 break;
             case "USERNAME":
-                clientGUI.connectEvent(parts[1], parts[2]);
+                clientGUI.handleConnect(parts[1], parts[2]);
                 break;
             case "NEW_USER":
                 clientGUI.addItemToList(clientGUI.getLvUsers(), parts[1]);
@@ -115,7 +115,7 @@ public class Client extends Thread {
                 clientGUI.setCards(response);
                 break;
             case "CURRENT":
-                clientGUI.setCurrent(parts[1]);
+                clientGUI.setCurrentCard(parts[1]);
                 break;
             case "BLOCK":
                 clientGUI.disableCards();
@@ -133,7 +133,7 @@ public class Client extends Thread {
                 clientGUI.showChangeColorAlert();
                 break;
             default:
-                clientGUI.showMessageLabel(response);
+                clientGUI.setTextLabel(clientGUI.getLblMessage(), response);
                 break;
         }
     }

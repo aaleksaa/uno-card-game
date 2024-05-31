@@ -92,18 +92,100 @@ public class ClientGUI extends Application {
         stage.setScene(scene);
         stage.show();
 
-        btnConnect.setOnAction(e -> sendUsername(tfUsername));
+        btnConnect.setOnAction(e -> sendUsernameEvent(tfUsername.getText()));
     }
 
-    private void sendUsername(TextField tf) {
-        String username = tf.getText();
+    //-------------------------
+    // BUTTON EVENTS
+    //-------------------------
 
+    private void sendUsernameEvent(String username) {
         if (username.isEmpty())
-            showConnectErrorLabel("Fill in username field!");
+            setTextLabel(lblConnectError, "Fill in username field!");
         else
             client.sendRequest("username " + username);
     }
 
+    private void createLobbyEvent(String lobbyName) {
+        if (lobbyName.isEmpty())
+            setTextLabel(lblStartError, "Fill in lobby name field!");
+        else
+            client.sendRequest("create_lobby " + lobbyName);
+    }
+
+    private void privateLobbyEvent() {
+        if (btnPrivate.getText().equals("Set private")) {
+            client.sendRequest("PRIVATE_LOBBY true");
+            btnPrivate.setText("Set public");
+        } else {
+            client.sendRequest("PRIVATE_LOBBY false");
+            btnPrivate.setText("Set private");
+        }
+    }
+
+    private void invitePlayerEvent(String username) {
+        if (username == null)
+            setTextLabel(lblLobbyError, "User is not selected!");
+        else
+            client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
+    }
+
+    private void joinLobbyEvent(String lobbyName) {
+        if (lobbyName == null)
+            setTextLabel(lblStartError, "Lobby is not selected!");
+        else
+            client.sendRequest("JOIN " + lobbyName);
+    }
+
+    private void setReadyEvent() {
+        if (btnReady.getText().equals("Ready")) {
+            client.sendRequest("READY true");
+            btnReady.setText("Not ready");
+        } else {
+            client.sendRequest("READY false");
+            btnReady.setText("Ready");
+        }
+    }
+
+    //---------------------
+    // HANDLE
+    //---------------------
+
+    public void handleError(String errorScene, String response) {
+        String[] parts = response.split(" ", 3);
+
+        if (errorScene.equals("START"))
+            setTextLabel(lblStartError, parts[2]);
+        else if (errorScene.equals("LOBBY"))
+            setTextLabel(lblLobbyError, parts[2]);
+    }
+
+    public void handleInvalidInput(Label lbl, TextField tf, String message) {
+        setTextLabel(lbl, message);
+        Platform.runLater(tf::clear);
+    }
+
+    public void handleConnect(String success, String username) {
+        if (success.equals("false"))
+            handleInvalidInput(lblConnectError, tfUsername, "Username " + username + " is already taken!");
+        else {
+            setStartScene();
+            client.setUsername(username);
+        }
+    }
+
+    public void handleCreateLobby(String success, String lobbyName) {
+        if (success.equals("false"))
+            handleInvalidInput(lblStartError, tfCreate, "Lobby " + lobbyName + " already exists!");
+        else {
+            setAdminLobbyScene();
+            lblLobbyName.setText(lobbyName);
+        }
+    }
+
+    public void setTextLabel(Label lbl, String text) {
+        Platform.runLater(() -> lbl.setText(text));
+    }
 
     public void setStartScene() {
         Platform.runLater(() -> {
@@ -111,9 +193,9 @@ public class ClientGUI extends Application {
             root.setId("start");
             root.getChildren().addAll(lblMessage, vbLobbies);
             tfCreate.setPromptText("Enter lobby name...");
-            btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate));
+            btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate.getText()));
             vbLobbies.setId("start-lobby");
-            btnJoinLobby.setOnAction(e -> client.sendRequest("join " + lvLobbies.getSelectionModel().getSelectedItem()));
+            btnJoinLobby.setOnAction(e -> joinLobbyEvent(lvLobbies.getSelectionModel().getSelectedItem()));
             vbLobbies.setAlignment(Pos.TOP_LEFT);
             lblLobby.setId("lblLobby");
             lblStartError.setId("error");
@@ -215,35 +297,14 @@ public class ClientGUI extends Application {
         });
     }
 
-    public void setCurrent(String current) {
+    public void setCurrentCard(String current) {
         Platform.runLater(() -> ivCurrent.setImage(new Image("file:images/cards/" + current + ".png")));
     }
 
-    public void showMessageLabel(String message) {
-        Platform.runLater(() -> lblMessage.setText(message));
+    public Label getLblMessage() {
+        return lblMessage;
     }
 
-    public void showConnectErrorLabel(String message) {
-        Platform.runLater(() -> lblConnectError.setText(message));
-    }
-
-    public void showErrorLabel(Label lbl, String message) {
-        Platform.runLater(() -> lbl.setText(message));
-    }
-
-    public Label getLblStartError() {
-        return lblStartError;
-    }
-
-    public void connectEvent(String success, String username) {
-        if (success.equals("true")) {
-            setStartScene();
-            client.setUsername(username);
-        } else {
-            showConnectErrorLabel("Username " + username + " is already taken! Try again.");
-            tfUsername.clear();
-        }
-    }
 
     public ListView<String> getLvLobbies() {
         return lvLobbies;
@@ -261,7 +322,6 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> listView.getItems().add(item));
     }
 
-
     public void handleViewUsers(String users) {
         String[] parts = users.split(" ");
 
@@ -276,26 +336,6 @@ public class ClientGUI extends Application {
             addItemToList(lvLobbies, parts[i]);
     }
 
-    public void handleCreateLobby(String success, String lobbyName) {
-        if (success.equals("false")) {
-            Platform.runLater(() -> {
-                lblStartError.setText("Lobby " + lobbyName + " already exists!");
-                tfCreate.clear();
-            });
-        } else {
-            setAdminLobbyScene();
-            lblLobbyName.setText(lobbyName);
-        }
-    }
-
-    private void createLobbyEvent(TextField tf) {
-        String lobbyName = tf.getText();
-
-        if (lobbyName.isEmpty())
-            lblStartError.setText("Fill in lobby name field!");
-        else
-            client.sendRequest("create_lobby " + lobbyName);
-    }
 
     public void disableCards() {
         Platform.runLater(() -> {
@@ -312,23 +352,6 @@ public class ClientGUI extends Application {
 
         for (int i = 1; i < parts.length; i++)
             addItemToList(lvPlayers, parts[i]);
-    }
-
-    private void privateLobbyEvent() {
-        if (btnPrivate.getText().equals("Set private")) {
-            client.sendRequest("set_private");
-            btnPrivate.setText("Set public");
-        } else {
-            client.sendRequest("set_public");
-            btnPrivate.setText("Set private");
-        }
-    }
-
-    public void invitePlayerEvent(String username) {
-        if (username == null)
-            lblLobbyError.setText("User is not selected!");
-        else
-            client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
 
     public void showChangeColorAlert() {
@@ -356,25 +379,13 @@ public class ClientGUI extends Application {
                 } else if (response == btnBlue) {
                     client.sendRequest("change Blue");
                     alert.close();
-                } else if (response == btnGreen){
+                } else if (response == btnGreen) {
                     client.sendRequest("change Green");
                     alert.close();
                 }
             });
         });
     }
-
-    private void setReadyEvent() {
-        if (btnReady.getText().equals("Ready")) {
-            client.sendRequest("ready true");
-            btnReady.setText("Not ready");
-        } else {
-            client.sendRequest("ready false");
-            btnReady.setText("Ready");
-        }
-    }
-
-
 
     public void removePlayerFromList(String username) {
         Platform.runLater(() -> lvPlayers.getItems().remove(username));

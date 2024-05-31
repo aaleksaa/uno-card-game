@@ -63,9 +63,6 @@ public class Uno {
         return playerOnMove;
     }
 
-    public boolean isGameFinished() {
-        return rankings.size() == players.size() - 1;
-    }
 
     public synchronized void playMove(String move) {
         UserThread currPlayer = queue.poll();
@@ -86,18 +83,6 @@ public class Uno {
         if (!colorChanged)
             playerOnMove.sendMessage("UNBLOCK " + playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
     }
-
-    private void message(UserThread currPlayer, Card card) {
-        if (isGameFinished()) {
-            rankings.put(queue.poll().getUsername(), rankings.size() + 1);
-            for (UserThread player : players)
-                player.sendMessage(rankings.toString());
-        } else {
-            server.broadcastInGame(lobby, currPlayer + " played " + card);
-            server.broadcastInGame(lobby, getCurrentStatus());
-        }
-    }
-
     public boolean isColorChanged() {
         return colorChanged;
     }
