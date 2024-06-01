@@ -184,6 +184,8 @@ public class UserThread extends Thread {
             server.broadcastToAll(this, username + " joined server!");
             sendMessage("VIEW USER " + server.getConnectedUsers(this));
             sendMessage("VIEW LOBBY " + server.getLobbies());
+            System.out.println(server.getLobbies());
+            System.out.println(server.getConnectedUsers(this));
 
             server.broadcastToAll(this, "NEW_USER " + username);
             this.username = username;

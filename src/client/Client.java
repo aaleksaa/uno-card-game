@@ -2,6 +2,7 @@ package client;
 
 import server.Server;
 import view.ClientView;
+import view.ViewUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class Client extends Thread {
     private InetAddress address;
@@ -73,7 +75,7 @@ public class Client extends Thread {
                 clientView.handleConnect(parts[1], parts[2]);
                 break;
             case "NEW_USER":
-                clientView.addItemToList(clientView.getLvUsers(), parts[1]);
+                ViewUtil.addItemToList(clientView.getLvUsers(), parts[1]);
                 break;
             case "VIEW":
                 clientView.handleViewItems(parts[1], parts[2]);
@@ -85,19 +87,13 @@ public class Client extends Thread {
                 clientView.setLobbyScene(parts[1]);
                 break;
             case "NEW_PLAYER_JOIN":
-                clientView.addItemToList(clientView.getLvPlayers(), parts[1]);
+                ViewUtil.addItemToList(clientView.getLvPlayers(), parts[1]);
                 break;
             case "NEW_LOBBY":
-                clientView.addItemToList(clientView.getLvLobbies(), parts[1]);
+                ViewUtil.addItemToList(clientView.getLvLobbies(), parts[1]);
                 break;
             case "INVITE":
                 clientView.showInviteAlert(parts[1], parts[2]);
-                break;
-            case "LEAVE_LOBBY":
-                clientView.setStartScene();
-                break;
-            case "LEAVE":
-                clientView.removePlayerFromList(parts[1]);
                 break;
             case "ACCEPT":
                 clientView.setLobbyScene(parts[1]);
@@ -136,7 +132,7 @@ public class Client extends Thread {
 //                clientGUI.remove(parts[1], parts[2]);
 //                break;
             default:
-                clientView.setTextLabel(clientView.getLblMessage(), response);
+                ViewUtil.setTextLabel(clientView.getLblMessage(), response);
                 break;
         }
     }

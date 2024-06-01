@@ -3,16 +3,13 @@ package view;
 import client.Client;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import javax.swing.text.View;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -21,7 +18,6 @@ import java.nio.file.Paths;
 public class ClientView extends Application {
     private Stage primaryStage;
     private Client client;
-    private final VBox root = new VBox(10);
     private ConnectScene connectScene;
     private StartScene startScene;
     private AdminLobbyScene adminLobbyScene;
@@ -45,10 +41,6 @@ public class ClientView extends Application {
 
         client.start();
 
-
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(20));
-        root.setId("root");
         lblMessage.setId("lblMessage");
         lblLobbyError.setId("error");
 
@@ -76,14 +68,14 @@ public class ClientView extends Application {
 
     private void sendUsernameEvent(String username) {
         if (username.isEmpty())
-            setTextLabel(connectScene.getLblConnectError(), "Fill in username field!");
+            ViewUtil.setTextLabel(connectScene.getLblConnectError(), "Fill in username field!");
         else
             client.sendRequest("username " + username);
     }
 
     private void createLobbyEvent(String lobbyName) {
         if (lobbyName.isEmpty())
-            setTextLabel(startScene.getLblStartError(), "Fill in lobby name field!");
+            ViewUtil.setTextLabel(startScene.getLblStartError(), "Fill in lobby name field!");
         else
             client.sendRequest("create_lobby " + lobbyName);
     }
@@ -101,14 +93,14 @@ public class ClientView extends Application {
 
     private void invitePlayerEvent(String username, Label lblLobbyName) {
         if (username == null)
-            setTextLabel(lblLobbyError, "User is not selected!");
+            ViewUtil.setTextLabel(lblLobbyError, "User is not selected!");
         else
             client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
 
     private void joinLobbyEvent(String lobbyName) {
         if (lobbyName == null)
-            setTextLabel(startScene.getLblStartError(), "Lobby is not selected!");
+            ViewUtil.setTextLabel(startScene.getLblStartError(), "Lobby is not selected!");
         else
             client.sendRequest("JOIN " + lobbyName);
     }
@@ -129,19 +121,14 @@ public class ClientView extends Application {
 
     public void handleError(String errorScene, String message) {
         if (errorScene.equals("START"))
-            setTextLabel(startScene.getLblStartError(), message);
+            ViewUtil.setTextLabel(startScene.getLblStartError(), message);
         else if (errorScene.equals("LOBBY"))
-            setTextLabel(lblLobbyError, message);
-    }
-
-    public void handleInvalidInput(Label lbl, TextField tf, String message) {
-        setTextLabel(lbl, message);
-        Platform.runLater(tf::clear);
+            ViewUtil.setTextLabel(lblLobbyError, message);
     }
 
     public void handleConnect(String success, String username) {
         if (success.equals("false"))
-            handleInvalidInput(connectScene.getLblConnectError(), connectScene.getTfUsername(), "Username " + username + " is already taken!");
+            ViewUtil.handleInvalidInput(connectScene.getLblConnectError(), connectScene.getTfUsername(), "Username " + username + " is already taken!");
         else {
             setStartScene();
             client.setUsername(username);
@@ -150,13 +137,9 @@ public class ClientView extends Application {
 
     public void handleCreateLobby(String success, String lobbyName) {
         if (success.equals("false"))
-            handleInvalidInput(startScene.getLblStartError(), startScene.getTfCreate(), "Lobby " + lobbyName + " already exists!");
+            ViewUtil.handleInvalidInput(startScene.getLblStartError(), startScene.getTfCreate(), "Lobby " + lobbyName + " already exists!");
         else
             setAdminLobbyScene(lobbyName);
-    }
-
-    public void setTextLabel(Label lbl, String text) {
-        Platform.runLater(() -> lbl.setText(text));
     }
 
 
@@ -174,7 +157,7 @@ public class ClientView extends Application {
     public void setLobbyScene(String lobbyName) {
         Platform.runLater(() -> {
             lvPlayers.getItems().add(client.getUsername());
-            setTextLabel(lobbyScene.getLblLobbyName(), lobbyName);
+            ViewUtil.setTextLabel(lobbyScene.getLblLobbyName(), lobbyName);
             lobbyScene.setListView(lvPlayers, lvUsers);
             lobbyScene.setLabel(lblMessage, lblLobbyError);
             primaryStage.setScene(lobbyScene.getScene());
@@ -184,7 +167,7 @@ public class ClientView extends Application {
     public void setAdminLobbyScene(String lobbyName) {
         Platform.runLater(() -> {
             lvPlayers.getItems().add(client.getUsername());
-            setTextLabel(adminLobbyScene.getLblLobbyName(), lobbyName);
+            ViewUtil.setTextLabel(adminLobbyScene.getLblLobbyName(), lobbyName);
             adminLobbyScene.setListView(lvPlayers, lvUsers);
             adminLobbyScene.setLabel(lblMessage, lblLobbyError);
 
@@ -194,7 +177,7 @@ public class ClientView extends Application {
 
     public void setGameScene() {
         Platform.runLater(() -> {
-            setTextLabel(gameScene.getLblUsername(), client.getUsername());
+            ViewUtil.setTextLabel(gameScene.getLblUsername(), client.getUsername());
             primaryStage.setScene(gameScene.getScene());
         });
     }
@@ -269,32 +252,18 @@ public class ClientView extends Application {
         return lvPlayers;
     }
 
-    public void addItemToList(ListView<String> listView, String item) {
-        Platform.runLater(() -> listView.getItems().add(item));
-    }
-
     public void handleViewItems(String itemType, String items) {
         String[] parts = items.split(" ");
 
         for (String part : parts) {
             if (itemType.equals("LOBBY"))
-                addItemToList(startScene.getLvLobbies(), part);
+                ViewUtil.addItemToList(startScene.getLvLobbies(), part);
             else if (itemType.equals("USER"))
-                addItemToList(lvUsers, part);
+                ViewUtil.addItemToList(lvUsers, part);
             else
-                addItemToList(lvPlayers, part);
+                ViewUtil.addItemToList(lvPlayers, part);
         }
     }
-
-
-    private void removeItemFromList(ListView<String> lv, String item) {
-        Platform.runLater(() -> lv.getItems().remove(item));
-    }
-
-//    public void remove(String type, String item) {
-//        if (type.equals("LOBBY"))
-//            removeItemFromList(lvLobbies, item);
-//    }
 
 
     public void disableCards() {
@@ -333,10 +302,6 @@ public class ClientView extends Application {
                 }
             });
         });
-    }
-
-    public void removePlayerFromList(String username) {
-        Platform.runLater(() -> lvPlayers.getItems().remove(username));
     }
 
     public void showInviteAlert(String lobbyName, String username) {
@@ -406,8 +371,8 @@ public class ClientView extends Application {
 
     public void showGameInfo(String typeInfo, String info) {
         if (typeInfo.equals("CARDS_NUM"))
-            setTextLabel(gameScene.getLblCards(), info);
+            ViewUtil.setTextLabel(gameScene.getLblCards(), info);
         else if (typeInfo.equals("CURR_PLAYER"))
-            setTextLabel(gameScene.getLblCurrentPlayer(), info);
+            ViewUtil.setTextLabel(gameScene.getLblCurrentPlayer(), info);
     }
 }
