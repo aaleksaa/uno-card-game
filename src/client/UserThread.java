@@ -167,7 +167,7 @@ public class UserThread extends Thread {
             this.lobby = lobby;
 
             sendMessage("JOIN " + lobbyName);
-            sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
+            sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));
 
             server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
             server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
@@ -182,8 +182,8 @@ public class UserThread extends Thread {
             sendMessage("USERNAME true " + username);
 
             server.broadcastToAll(this, username + " joined server!");
-            sendMessage("VIEW_USERS " + server.getConnectedUsers(this));
-            sendMessage("VIEW_LOBBIES " + server.getLobbies());
+            sendMessage("VIEW USER " + server.getConnectedUsers(this));
+            sendMessage("VIEW LOBBY " + server.getLobbies());
 
             server.broadcastToAll(this, "NEW_USER " + username);
             this.username = username;
@@ -222,7 +222,7 @@ public class UserThread extends Thread {
         server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
 
         sendMessage("ACCEPT " + lobbyName);
-        sendMessage("VIEW_PLAYERS " + server.getPlayersInLobby(this, lobby));
+        sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));
     }
 
     private void declineInviteHandler(String lobbyName) {

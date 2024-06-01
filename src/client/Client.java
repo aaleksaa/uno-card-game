@@ -1,7 +1,7 @@
 package client;
 
 import server.Server;
-import view.ClientGUI;
+import view.ClientView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,16 +17,16 @@ public class Client extends Thread {
     private BufferedReader fromServer;
     private PrintWriter toServer;
     private String username;
-    private ClientGUI clientGUI;
+    private ClientView clientView;
 
-    public Client(ClientGUI clientGUI) {
+    public Client(ClientView clientView) {
         try {
             this.port = Server.PORT;
             this.address = InetAddress.getByName("localhost");
             this.socket = new Socket(address, port);
             this.fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.toServer = new PrintWriter(socket.getOutputStream(), true);
-            this.clientGUI = clientGUI;
+            this.clientView = clientView;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -63,86 +63,80 @@ public class Client extends Thread {
     }
 
     private void handleResponse(String response) {
-        String[] parts = response.split(" ");
+        String[] parts = response.split(" ", 3);
 
         switch (parts[0]) {
             case "SHOW_LABEL":
-                clientGUI.handleError(parts[1], response);
+                clientView.handleError(parts[1], parts[2]);
                 break;
             case "USERNAME":
-                clientGUI.handleConnect(parts[1], parts[2]);
+                clientView.handleConnect(parts[1], parts[2]);
                 break;
             case "NEW_USER":
-                clientGUI.addItemToList(clientGUI.getLvUsers(), parts[1]);
+                clientView.addItemToList(clientView.getLvUsers(), parts[1]);
                 break;
-            case "VIEW_USERS":
-                clientGUI.handleViewUsers(response);
-                break;
-            case "VIEW_LOBBIES":
-                clientGUI.handleViewLobbies(response);
-                break;
-            case "VIEW_PLAYERS":
-                clientGUI.handleViewPlayers(response);
+            case "VIEW":
+                clientView.handleViewItems(parts[1], parts[2]);
                 break;
             case "CREATE_LOBBY":
-                clientGUI.handleCreateLobby(parts[1], parts[2]);
+                clientView.handleCreateLobby(parts[1], parts[2]);
                 break;
             case "JOIN":
-                clientGUI.setLobbyScene(parts[1]);
+                clientView.setLobbyScene(parts[1]);
                 break;
             case "NEW_PLAYER_JOIN":
-                clientGUI.addItemToList(clientGUI.getLvPlayers(), parts[1]);
+                clientView.addItemToList(clientView.getLvPlayers(), parts[1]);
                 break;
             case "NEW_LOBBY":
-                clientGUI.addItemToList(clientGUI.getLvLobbies(), parts[1]);
+                clientView.addItemToList(clientView.getLvLobbies(), parts[1]);
                 break;
             case "INVITE":
-                clientGUI.showInviteAlert(parts[1], parts[2]);
+                clientView.showInviteAlert(parts[1], parts[2]);
                 break;
             case "LEAVE_LOBBY":
-                clientGUI.setStartScene();
+                clientView.setStartScene();
                 break;
             case "LEAVE":
-                clientGUI.removePlayerFromList(parts[1]);
+                clientView.removePlayerFromList(parts[1]);
                 break;
             case "ACCEPT":
-                clientGUI.setLobbyScene(parts[1]);
+                clientView.setLobbyScene(parts[1]);
                 break;
             case "START":
-                clientGUI.setGameScene();
+                clientView.setGameScene();
                 break;
             case "CARDS":
-                clientGUI.setCards(response);
+                clientView.setCards(response);
                 break;
             case "CURRENT":
-                clientGUI.setCurrentCard(parts[1]);
+                clientView.setCurrentCard(parts[1]);
                 break;
             case "BLOCK":
-                clientGUI.disableCards();
+                clientView.disableCards();
                 break;
             case "UNBLOCK":
-                clientGUI.enableCards(response);
+                clientView.enableCards(response);
                 break;
             case "GAME_INFO":
-                clientGUI.showGameInfo(response);
+                clientView.showGameInfo(parts[1], parts[2]);
                 break;
             case "DRAW":
-                clientGUI.addCards(response);
+                clientView.addCards(response);
                 break;
             case "CHANGE":
-                clientGUI.showChangeColorAlert();
+                clientView.showChangeColorAlert();
                 break;
             case "NO_CARDS":
                 sendRequest("DRAW");
                 break;
             case "FINISH":
-                clientGUI.showFinishAlert(response);
+                clientView.showFinishAlert(response);
                 break;
-            case "TEST":
-                clientGUI.setStartScene();
-                break;
+//            case "REMOVE":
+//                clientGUI.remove(parts[1], parts[2]);
+//                break;
             default:
-                clientGUI.setTextLabel(clientGUI.getLblMessage(), response);
+                clientView.setTextLabel(clientView.getLblMessage(), response);
                 break;
         }
     }

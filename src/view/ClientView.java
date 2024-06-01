@@ -6,13 +6,11 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.net.MalformedURLException;
@@ -20,81 +18,56 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 
-public class ClientGUI extends Application {
+public class ClientView extends Application {
+    private Stage primaryStage;
     private Client client;
     private final VBox root = new VBox(10);
-    // Connect window components
-    private final Text txtTitle = new Text("Welcome to UNO server!");
-    private final TextField tfUsername = new TextField();
-    private final Button btnConnect = new Button("Connect");
-    private final Label lblConnectError = new Label();
-    private final VBox vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect, lblConnectError);
-    // Start window components
+    private ConnectScene connectScene;
+    private StartScene startScene;
+    private AdminLobbyScene adminLobbyScene;
+    private LobbyScene lobbyScene;
     private final Label lblMessage = new Label();
-    private final Label lblLobby = new Label("Current lobbies");
-    private final ListView<String> lvLobbies = new ListView<>();
-    private final Button btnCreateLobby = new Button("Create lobby");
-    private final Button btnJoinLobby = new Button("Join lobby");
-    private final TextField tfCreate = new TextField();
-    private final HBox hbCreateJoinLobby = new HBox(20, tfCreate, btnCreateLobby, btnJoinLobby);
-    private final Label lblStartError = new Label();
-    private final VBox vbLobbies = new VBox(20, lblLobby, lvLobbies, hbCreateJoinLobby, lblStartError);
-    // Lobby scene components
-    private final Label lblLobbyName = new Label();
-    private final Label lblUser = new Label("Online users");
     private final ListView<String> lvUsers = new ListView<>();
-    private final VBox vbUsers = new VBox(5, lblUser, lvUsers);
-    private final Label lblPlayers = new Label("Players");
     private final ListView<String> lvPlayers = new ListView<>();
-    private final Button btnAdminLeaveLobby = new Button("Leave lobby");
-    private final Button btnLeaveLobby = new Button("Leave lobby");
-    private final Button btnReady = new Button("Ready");
-    private final HBox hbLobbyButtons = new HBox(5, btnLeaveLobby, btnReady);
-
-    private final Button btnPrivate = new Button("Set private");
-    private final Button btnStart = new Button("Start game");
-    private final HBox hbAdminLobbyButtons = new HBox(5, btnAdminLeaveLobby, btnPrivate, btnStart);
-    private final VBox vbPlayers = new VBox(10, lblPlayers, lvPlayers);
-    private final Button btnInvite = new Button("Invite");
-    private final VBox vbInvite = new VBox(10, vbUsers, btnInvite);
-    private final HBox hbLobby = new HBox(150, vbPlayers, vbInvite);
     private final Label lblLobbyError = new Label();
-    // Game scene components
-    private final Label lblUsername = new Label();
-    private final Label lblCurrentPlayer = new Label();
-    private final Label lblCards = new Label();
-    private final Label lblGame = new Label();
-    private final ImageView ivCurrent = new ImageView();
-    private final ImageView ivBack = new ImageView(new Image("file:images/cards/back.png"));
-    private final HBox hbDeck = new HBox(20, ivCurrent, ivBack);
-    private final HBox hbCards = new HBox(10);
-    private final VBox vbGame = new VBox(10, lblUsername, lblCurrentPlayer, lblCards, lblGame, hbDeck, hbCards);
-
+    private GameScene gameScene;
 
     @Override
     public void start(Stage stage) throws Exception {
+        primaryStage = stage;
         client = new Client(this);
+
+        connectScene = new ConnectScene();
+        startScene = new StartScene();
+        adminLobbyScene = new AdminLobbyScene();
+        lobbyScene = new LobbyScene();
+        gameScene = new GameScene();
+
         client.start();
 
-        root.getChildren().add(vbConnect);
 
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(20));
         root.setId("root");
-        vbConnect.setId("vb-connect");
-        vbConnect.setAlignment(Pos.CENTER);
-        tfUsername.setPromptText("Enter username...");
         lblMessage.setId("lblMessage");
         lblLobbyError.setId("error");
 
 
-        Scene scene = new Scene(root, 850, 600);
-        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
-        stage.setTitle("Uno");
-        stage.setScene(scene);
-        stage.show();
+        primaryStage.setTitle("Uno");
+        primaryStage.setScene(connectScene.getScene());
+        primaryStage.show();
 
-        btnConnect.setOnAction(e -> sendUsernameEvent(tfUsername.getText()));
+        connectScene.getBtnConnect().setOnAction(e -> sendUsernameEvent(connectScene.getTfUsername().getText()));
+
+        startScene.getBtnCreateLobby().setOnAction(e -> createLobbyEvent(startScene.getTfCreate().getText()));
+        startScene.getBtnJoinLobby().setOnAction(e -> joinLobbyEvent(startScene.getLvLobbies().getSelectionModel().getSelectedItem()));
+
+        adminLobbyScene.getBtnPrivate().setOnAction(e -> privateLobbyEvent());
+        adminLobbyScene.getBtnInvite().setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem(), adminLobbyScene.getLblLobbyName()));
+        adminLobbyScene.getBtnStart().setOnAction(e -> client.sendRequest("start"));
+
+        lobbyScene.getBtnInvite().setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem(), lobbyScene.getLblLobbyName()));
+        lobbyScene.getBtnReady().setOnAction(e -> setReadyEvent());
     }
 
     //-------------------------
@@ -103,29 +76,30 @@ public class ClientGUI extends Application {
 
     private void sendUsernameEvent(String username) {
         if (username.isEmpty())
-            setTextLabel(lblConnectError, "Fill in username field!");
+            setTextLabel(connectScene.getLblConnectError(), "Fill in username field!");
         else
             client.sendRequest("username " + username);
     }
 
     private void createLobbyEvent(String lobbyName) {
         if (lobbyName.isEmpty())
-            setTextLabel(lblStartError, "Fill in lobby name field!");
+            setTextLabel(startScene.getLblStartError(), "Fill in lobby name field!");
         else
             client.sendRequest("create_lobby " + lobbyName);
     }
 
+
     private void privateLobbyEvent() {
-        if (btnPrivate.getText().equals("Set private")) {
+        if (adminLobbyScene.privateBtnText()) {
             client.sendRequest("PRIVATE_LOBBY true");
-            btnPrivate.setText("Set public");
+            adminLobbyScene.setBtnPrivateText("Set public");
         } else {
             client.sendRequest("PRIVATE_LOBBY false");
-            btnPrivate.setText("Set private");
+            adminLobbyScene.setBtnPrivateText("Set private");
         }
     }
 
-    private void invitePlayerEvent(String username) {
+    private void invitePlayerEvent(String username, Label lblLobbyName) {
         if (username == null)
             setTextLabel(lblLobbyError, "User is not selected!");
         else
@@ -134,18 +108,18 @@ public class ClientGUI extends Application {
 
     private void joinLobbyEvent(String lobbyName) {
         if (lobbyName == null)
-            setTextLabel(lblStartError, "Lobby is not selected!");
+            setTextLabel(startScene.getLblStartError(), "Lobby is not selected!");
         else
             client.sendRequest("JOIN " + lobbyName);
     }
 
     private void setReadyEvent() {
-        if (btnReady.getText().equals("Ready")) {
+        if (lobbyScene.readyBtnText()) {
             client.sendRequest("READY true");
-            btnReady.setText("Not ready");
+            lobbyScene.setBtnReadyText("Not ready");
         } else {
             client.sendRequest("READY false");
-            btnReady.setText("Ready");
+            lobbyScene.setBtnReadyText("Ready");
         }
     }
 
@@ -153,13 +127,11 @@ public class ClientGUI extends Application {
     // HANDLE
     //---------------------
 
-    public void handleError(String errorScene, String response) {
-        String[] parts = response.split(" ", 3);
-
+    public void handleError(String errorScene, String message) {
         if (errorScene.equals("START"))
-            setTextLabel(lblStartError, parts[2]);
+            setTextLabel(startScene.getLblStartError(), message);
         else if (errorScene.equals("LOBBY"))
-            setTextLabel(lblLobbyError, parts[2]);
+            setTextLabel(lblLobbyError, message);
     }
 
     public void handleInvalidInput(Label lbl, TextField tf, String message) {
@@ -169,7 +141,7 @@ public class ClientGUI extends Application {
 
     public void handleConnect(String success, String username) {
         if (success.equals("false"))
-            handleInvalidInput(lblConnectError, tfUsername, "Username " + username + " is already taken!");
+            handleInvalidInput(connectScene.getLblConnectError(), connectScene.getTfUsername(), "Username " + username + " is already taken!");
         else {
             setStartScene();
             client.setUsername(username);
@@ -178,11 +150,9 @@ public class ClientGUI extends Application {
 
     public void handleCreateLobby(String success, String lobbyName) {
         if (success.equals("false"))
-            handleInvalidInput(lblStartError, tfCreate, "Lobby " + lobbyName + " already exists!");
-        else {
-            setAdminLobbyScene();
-            lblLobbyName.setText(lobbyName);
-        }
+            handleInvalidInput(startScene.getLblStartError(), startScene.getTfCreate(), "Lobby " + lobbyName + " already exists!");
+        else
+            setAdminLobbyScene(lobbyName);
     }
 
     public void setTextLabel(Label lbl, String text) {
@@ -196,16 +166,36 @@ public class ClientGUI extends Application {
 
     public void setStartScene() {
         Platform.runLater(() -> {
-            root.getChildren().clear();
-            root.setId("start");
-            root.getChildren().addAll(lblMessage, vbLobbies);
-            tfCreate.setPromptText("Enter lobby name...");
-            btnCreateLobby.setOnAction(e -> createLobbyEvent(tfCreate.getText()));
-            vbLobbies.setId("start-lobby");
-            btnJoinLobby.setOnAction(e -> joinLobbyEvent(lvLobbies.getSelectionModel().getSelectedItem()));
-            vbLobbies.setAlignment(Pos.TOP_LEFT);
-            lblLobby.setId("lblLobby");
-            lblStartError.setId("error");
+            startScene.setLabelMessage(lblMessage);
+            primaryStage.setScene(startScene.getScene());
+        });
+    }
+
+    public void setLobbyScene(String lobbyName) {
+        Platform.runLater(() -> {
+            lvPlayers.getItems().add(client.getUsername());
+            setTextLabel(lobbyScene.getLblLobbyName(), lobbyName);
+            lobbyScene.setListView(lvPlayers, lvUsers);
+            lobbyScene.setLabel(lblMessage, lblLobbyError);
+            primaryStage.setScene(lobbyScene.getScene());
+        });
+    }
+
+    public void setAdminLobbyScene(String lobbyName) {
+        Platform.runLater(() -> {
+            lvPlayers.getItems().add(client.getUsername());
+            setTextLabel(adminLobbyScene.getLblLobbyName(), lobbyName);
+            adminLobbyScene.setListView(lvPlayers, lvUsers);
+            adminLobbyScene.setLabel(lblMessage, lblLobbyError);
+
+            primaryStage.setScene(adminLobbyScene.getScene());
+        });
+    }
+
+    public void setGameScene() {
+        Platform.runLater(() -> {
+            setTextLabel(gameScene.getLblUsername(), client.getUsername());
+            primaryStage.setScene(gameScene.getScene());
         });
     }
 
@@ -219,39 +209,24 @@ public class ClientGUI extends Application {
                 Button btnCard = new Button();
                 btnCard.setGraphic(iv);
                 String card = parts[i];
-                hbCards.getChildren().add(btnCard);
+                gameScene.getHbCards().getChildren().add(btnCard);
 
                 if (!btnCard.isDisabled())
                     btnCard.setOnAction(e -> {
                         client.sendRequest("play " + card);
-                        hbCards.getChildren().remove(btnCard);
+                        gameScene.getHbCards().getChildren().remove(btnCard);
                     });
             }
         });
     }
 
-    public void setLobbyScene(String lobbyName) {
-        Platform.runLater(() -> {
-            root.getChildren().clear();
-            lblMessage.setText("");
-            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby, lblLobbyError);
-            lblLobbyName.setId("lblLobby");
-            hbLobby.setId("start-lobby");
-            btnInvite.setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem()));
-            vbPlayers.getChildren().add(hbLobbyButtons);
-            lvPlayers.getItems().add(client.getUsername());
-            btnLeaveLobby.setOnAction(e -> client.sendRequest("leave"));
-            lblLobbyName.setText(lobbyName);
-            btnReady.setOnAction(e -> setReadyEvent());
-        });
-    }
 
     public void enableCards(String cards) {
         Platform.runLater(() -> {
             try {
                 String[] parts = cards.split(" ");
 
-                for (Node node : hbCards.getChildren()) {
+                for (Node node : gameScene.getHbCards().getChildren()) {
                     Button btn = (Button) node;
                     ImageView iv = (ImageView) btn.getGraphic();
                     Image img = iv.getImage();
@@ -272,53 +247,18 @@ public class ClientGUI extends Application {
         });
     }
 
-    public void setAdminLobbyScene() {
-        Platform.runLater(() -> {
-            root.getChildren().clear();
-            lblMessage.setText("");
-            root.getChildren().addAll(lblMessage, lblLobbyName, hbLobby, lblLobbyError);
-            lblLobbyName.setId("lblLobby");
-            hbLobby.setId("start-lobby");
-            vbPlayers.getChildren().add(hbAdminLobbyButtons);
-            btnInvite.setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem()));
-            lvPlayers.getItems().add(client.getUsername());
-            btnPrivate.setOnAction(e -> privateLobbyEvent());
-            lblPlayers.setId("lblMessage");
-            lblUser.setId("lblMessage");
-            btnStart.setOnAction(e -> client.sendRequest("start"));
-        });
-    }
-
-    public void setGameScene() {
-        Platform.runLater(() -> {
-            root.getChildren().clear();
-            root.setId("game");
-            root.getChildren().add(vbGame);
-            ivCurrent.setFitWidth(80);
-            ivCurrent.setFitHeight(150);
-            ivBack.setFitWidth(80);
-            ivBack.setFitHeight(150);
-            vbGame.setAlignment(Pos.CENTER);
-            hbDeck.setAlignment(Pos.CENTER);
-            root.setAlignment(Pos.CENTER);
-            lblUsername.setText(client.getUsername());
-        });
-    }
 
     public void setCurrentCard(String current) {
-        Platform.runLater(() -> ivCurrent.setImage(new Image("file:images/cards/" + current + ".png")));
+        Platform.runLater(() -> gameScene.getIvCurrent().setImage(new Image("file:images/cards/" + current + ".png")));
     }
 
     public Label getLblMessage() {
         return lblMessage;
     }
 
-    public Label getLblUsername() {
-        return lblUsername;
-    }
 
     public ListView<String> getLvLobbies() {
-        return lvLobbies;
+        return startScene.getLvLobbies();
     }
 
     public ListView<String> getLvUsers() {
@@ -333,37 +273,34 @@ public class ClientGUI extends Application {
         Platform.runLater(() -> listView.getItems().add(item));
     }
 
-    public void handleViewUsers(String users) {
-        String[] parts = users.split(" ");
+    public void handleViewItems(String itemType, String items) {
+        String[] parts = items.split(" ");
 
-        for (int i = 1; i < parts.length; i++)
-            addItemToList(lvUsers, parts[i]);
+        for (String part : parts) {
+            if (itemType.equals("LOBBY"))
+                addItemToList(startScene.getLvLobbies(), part);
+            else if (itemType.equals("USER"))
+                addItemToList(lvUsers, part);
+            else
+                addItemToList(lvPlayers, part);
+        }
     }
 
-    public void handleViewLobbies(String lobbies) {
-        String[] parts = lobbies.split(" ");
 
-        for (int i = 1; i < parts.length; i++)
-            addItemToList(lvLobbies, parts[i]);
+    private void removeItemFromList(ListView<String> lv, String item) {
+        Platform.runLater(() -> lv.getItems().remove(item));
     }
+
+//    public void remove(String type, String item) {
+//        if (type.equals("LOBBY"))
+//            removeItemFromList(lvLobbies, item);
+//    }
 
 
     public void disableCards() {
-        Platform.runLater(() -> {
-            for (Node node : hbCards.getChildren()) {
-                Button btn = (Button) node;
-                btn.setDisable(true);
-            }
-        });
+        Platform.runLater(() -> gameScene.getHbCards().getChildren().forEach(node -> node.setDisable(true)));
     }
 
-
-    public void handleViewPlayers(String players) {
-        String[] parts = players.split(" ");
-
-        for (int i = 1; i < parts.length; i++)
-            addItemToList(lvPlayers, parts[i]);
-    }
 
     public void showChangeColorAlert() {
         Platform.runLater(() -> {
@@ -436,10 +373,10 @@ public class ClientGUI extends Application {
                 Button btnCard = new Button();
                 btnCard.setGraphic(iv);
                 String card = parts[i];
-                hbCards.getChildren().add(btnCard);
+                gameScene.getHbCards().getChildren().add(btnCard);
                 btnCard.setOnAction(e -> {
                     client.sendRequest("play " + card);
-                    hbCards.getChildren().remove(btnCard);
+                    gameScene.getHbCards().getChildren().remove(btnCard);
                 });
             }
         });
@@ -467,12 +404,10 @@ public class ClientGUI extends Application {
         });
     }
 
-    public void showGameInfo(String response) {
-        String[] parts = response.split(" ", 3);
-
-        if (parts[1].equals("CARDS_NUM"))
-            setTextLabel(lblCards, parts[2]);
-        else if (parts[1].equals("CURR_PLAYER"))
-            setTextLabel(lblCurrentPlayer, parts[2]);
+    public void showGameInfo(String typeInfo, String info) {
+        if (typeInfo.equals("CARDS_NUM"))
+            setTextLabel(gameScene.getLblCards(), info);
+        else if (typeInfo.equals("CURR_PLAYER"))
+            setTextLabel(gameScene.getLblCurrentPlayer(), info);
     }
 }

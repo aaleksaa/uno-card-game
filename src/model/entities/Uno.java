@@ -108,6 +108,9 @@ public class Uno {
             for (int i = 0; i < spectators.size(); i++)
                 sb.append(i + 1).append(" - ").append(spectators.get(i)).append("  ");
 
+
+            server.broadcastInGame(lobby, "REMOVE LOBBY " + lobby.getLobbyName());
+            server.removeLobby(lobby);
             server.broadcastInGame(lobby, "FINISH " + sb);
         }
     }
