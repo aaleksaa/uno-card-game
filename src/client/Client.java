@@ -10,7 +10,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class Client extends Thread {
     private InetAddress address;
@@ -68,35 +67,23 @@ public class Client extends Thread {
         String[] parts = response.split(" ", 3);
 
         switch (parts[0]) {
-            case "SHOW_LABEL":
-                clientView.handleError(parts[1], parts[2]);
-                break;
             case "USERNAME":
                 clientView.handleConnect(parts[1], parts[2]);
                 break;
-            case "NEW_USER":
-                ViewUtil.addItemToList(clientView.getLvUsers(), parts[1]);
+            case "SHOW_LABEL":
+                clientView.handleError(parts[1], parts[2]);
                 break;
-            case "VIEW":
-                clientView.handleViewItems(parts[1], parts[2]);
+            case "NEW", "VIEW":
+                clientView.handleAddItems(parts[1], parts[2]);
                 break;
             case "CREATE_LOBBY":
                 clientView.handleCreateLobby(parts[1], parts[2]);
                 break;
-            case "JOIN":
+            case "JOIN", "ACCEPT":
                 clientView.setLobbyScene(parts[1]);
-                break;
-            case "NEW_PLAYER_JOIN":
-                ViewUtil.addItemToList(clientView.getLvPlayers(), parts[1]);
-                break;
-            case "NEW_LOBBY":
-                ViewUtil.addItemToList(clientView.getLvLobbies(), parts[1]);
                 break;
             case "INVITE":
                 clientView.showInviteAlert(parts[1], parts[2]);
-                break;
-            case "ACCEPT":
-                clientView.setLobbyScene(parts[1]);
                 break;
             case "START":
                 clientView.setGameScene();
@@ -123,14 +110,17 @@ public class Client extends Thread {
                 clientView.showChangeColorAlert();
                 break;
             case "NO_CARDS":
-                sendRequest("DRAW");
+                clientView.enableDrawCard();
                 break;
             case "FINISH":
                 clientView.showFinishAlert(response);
                 break;
-//            case "REMOVE":
-//                clientGUI.remove(parts[1], parts[2]);
-//                break;
+            case "REMOVE":
+                clientView.handleRemoveItem(parts[1], parts[2]);
+                break;
+            case "DISCONNECT":
+                close();
+                break;
             default:
                 ViewUtil.setTextLabel(clientView.getLblMessage(), response);
                 break;

@@ -9,7 +9,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
-import javax.swing.text.View;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -60,6 +59,25 @@ public class ClientView extends Application {
 
         lobbyScene.getBtnInvite().setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem(), lobbyScene.getLblLobbyName()));
         lobbyScene.getBtnReady().setOnAction(e -> setReadyEvent());
+
+        gameScene.getBtnDraw().setOnAction(e -> client.sendRequest("DRAW"));
+
+        primaryStage.setOnCloseRequest(event -> {
+            // Sprečite zatvaranje prozora
+            event.consume();
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation Dialog");
+            alert.setHeaderText("Are you sure you want to exit?");
+            alert.setContentText("Please confirm your action.");
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    client.sendRequest("DISCONNECT");
+                    primaryStage.close();
+                }
+            });
+        });
     }
 
     //-------------------------
@@ -149,6 +167,7 @@ public class ClientView extends Application {
 
     public void setStartScene() {
         Platform.runLater(() -> {
+            startScene.clear();
             startScene.setLabelMessage(lblMessage);
             primaryStage.setScene(startScene.getScene());
         });
@@ -239,20 +258,7 @@ public class ClientView extends Application {
         return lblMessage;
     }
 
-
-    public ListView<String> getLvLobbies() {
-        return startScene.getLvLobbies();
-    }
-
-    public ListView<String> getLvUsers() {
-        return lvUsers;
-    }
-
-    public ListView<String> getLvPlayers() {
-        return lvPlayers;
-    }
-
-    public void handleViewItems(String itemType, String items) {
+    public void handleAddItems(String itemType, String items) {
         String[] parts = items.split(" ");
 
         for (String part : parts) {
@@ -265,11 +271,28 @@ public class ClientView extends Application {
         }
     }
 
-
-    public void disableCards() {
-        Platform.runLater(() -> gameScene.getHbCards().getChildren().forEach(node -> node.setDisable(true)));
+    public void handleRemoveItem(String itemType, String item) {
+        if (itemType.equals("LOBBY"))
+            ViewUtil.removeItemFromList(startScene.getLvLobbies(), item);
+        else if (itemType.equals("USER"))
+            ViewUtil.removeItemFromList(lvUsers, item);
+        else
+            ViewUtil.removeItemFromList(lvPlayers, item);
     }
 
+    public void disableCards() {
+        Platform.runLater(() -> {
+            gameScene.getHbCards().getChildren().forEach(node -> node.setDisable(true));
+            gameScene.disableBtnDraw(true);
+        });
+    }
+
+
+    public void enableDrawCard() {
+        Platform.runLater(() -> {
+            gameScene.disableBtnDraw(false);
+        });
+    }
 
     public void showChangeColorAlert() {
         Platform.runLater(() -> {

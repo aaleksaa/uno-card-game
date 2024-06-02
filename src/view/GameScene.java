@@ -1,7 +1,9 @@
 package view;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -14,6 +16,7 @@ public class GameScene {
     private final Label lblCurrentPlayer;
     private final Label lblCards;
     private final ImageView ivCurrent;
+    private final Button btnDraw;
     private final ImageView ivBack;
     private final HBox hbDeck;
     private final HBox hbCards;
@@ -26,7 +29,9 @@ public class GameScene {
         lblCards = new Label();
         ivCurrent = new ImageView();
         ivBack = new ImageView(new Image("file:images/cards/back.png"));
-        hbDeck = new HBox(20, ivCurrent, ivBack);
+        btnDraw = new Button();
+        btnDraw.setGraphic(ivBack);
+        hbDeck = new HBox(20, ivCurrent, btnDraw);
         hbCards = new HBox(10);
         vbGame = new VBox(10, lblUsername, lblCurrentPlayer, lblCards, hbDeck, hbCards);
         root = new VBox(vbGame);
@@ -81,6 +86,14 @@ public class GameScene {
 
     public HBox getHbCards() {
         return hbCards;
+    }
+
+    public void disableBtnDraw(boolean disable) {
+        Platform.runLater(() -> btnDraw.setDisable(disable));
+    }
+
+    public Button getBtnDraw() {
+        return btnDraw;
     }
 
     public VBox getVbGame() {

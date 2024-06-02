@@ -42,7 +42,6 @@ public abstract class Card {
             return numberCard1.getValue() == numberCard2.getValue();
         else if (card1 instanceof ActionCard actionCard1 && card2 instanceof ActionCard actionCard2)
             return actionCard1.getCardType() == actionCard2.getCardType();
-        else
-            return false;
+        return false;
     }
 }

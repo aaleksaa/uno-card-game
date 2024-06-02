@@ -70,7 +70,7 @@ public class UserThread extends Thread {
             while (true) {
                 userInput = fromUser.readLine();
 
-                if (userInput == null || userInput.equals("exit"))
+                if (userInput == null)
                     break;
 
                 handleRequest(userInput);
@@ -124,6 +124,9 @@ public class UserThread extends Thread {
             case "DRAW":
                 lobby.getUno().draw();
                 break;
+            case "DISCONNECT":
+                handleDisconnect();
+                break;
         }
     }
 
@@ -149,7 +152,7 @@ public class UserThread extends Thread {
             server.addNewLobby(lobby);
 
             server.broadcastToAll(this, username + " created new lobby!");
-            server.broadcastToAll(this, "NEW_LOBBY " + lobbyName);
+            server.broadcastToAll(this, "NEW LOBBY " + lobbyName);
             this.ready = true;
         }
     }
@@ -170,7 +173,7 @@ public class UserThread extends Thread {
             sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));
 
             server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
-            server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
+            server.broadcastToLobby(this, lobby, "NEW PLAYER " + this.username);
         }
     }
 
@@ -187,7 +190,7 @@ public class UserThread extends Thread {
             System.out.println(server.getLobbies());
             System.out.println(server.getConnectedUsers(this));
 
-            server.broadcastToAll(this, "NEW_USER " + username);
+            server.broadcastToAll(this, "NEW USER " + username);
             this.username = username;
         }
     }
@@ -200,6 +203,19 @@ public class UserThread extends Thread {
         } catch (IOException e) {
             System.err.println("Error with closing resources!");
         }
+    }
+
+    private void handleDisconnect() {
+        server.broadcastToAll(this, username + " has disconnected!");
+        server.broadcastToAll(this, "REMOVE USER " + username);
+        server.broadcastToAll(this, "REMOVE PLAYER " + username);
+        close();
+        sendMessage("DISCONNECT");
+
+        if (lobby != null)
+            lobby.removePlayer(this);
+
+        server.removeUser(this);
     }
 
 
@@ -221,7 +237,7 @@ public class UserThread extends Thread {
         this.lobby = lobby;
 
         server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
-        server.broadcastToLobby(this, lobby, "NEW_PLAYER_JOIN " + this.username);
+        server.broadcastToLobby(this, lobby, "NEW PLAYER " + this.username);
 
         sendMessage("ACCEPT " + lobbyName);
         sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));

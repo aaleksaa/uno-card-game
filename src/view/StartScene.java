@@ -36,15 +36,21 @@ public class StartScene {
     }
 
     public void setLabelMessage(Label lblMessage) {
+        lblMessage.setText("");
         root.getChildren().add(0, lblMessage);
+    }
+
+    public void clear() {
+        tfCreate.clear();
+        lblStartError.setText("");
     }
 
     private void initializeScene() {
         tfCreate.clear();
-//        lblMessage.setText("");
         lblStartError.setText("");
 
 
+        tfCreate.clear();
         vbLobbies.setAlignment(Pos.TOP_LEFT);
         tfCreate.setPromptText("Enter lobby name...");
         root.setId("start");
