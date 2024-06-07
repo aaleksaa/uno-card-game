@@ -1,10 +1,10 @@
-package client;
+package client_server;
 
 import model.entities.PlayerDeck;
 import model.entities.Uno;
 import model.enums.Color;
-import server.Lobby;
-import server.Server;
+import model.entities.Lobby;
+import view.ViewUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -86,37 +86,37 @@ public class UserThread extends Thread {
 
         switch (parts[0]) {
             case "create_lobby":
-                createLobbyHandler(parts[1]);
+                handleCreateLobby(parts[1]);
                 break;
             case "PRIVATE_LOBBY":
                 lobby.setPrivateLobby(parts[1].equals("true"));
                 break;
             case "invite":
-                invitePlayerHandler(parts[1], parts[2], parts[3]);
+                handlePlayerInvite(parts[1], parts[2], parts[3]);
                 break;
             case "accept":
-                acceptInviteHandler(parts[1]);
+                handleAcceptInvite(parts[1]);
                 break;
             case "decline":
-                declineInviteHandler(parts[1]);
+                handleDeclineInvite(parts[1]);
                 break;
             case "JOIN":
                 handleJoinLobby(parts[1]);
                 break;
             case "leave":
-                leaveLobbyHandler();
+                handleLeaveLobby();
                 break;
             case "READY":
                 this.ready = parts[1].equals("true");
                 break;
             case "start":
-                startGameHandler();
+                handleStartGame();
                 break;
             case "play":
                 lobby.getUno().playMove(parts[1]);
                 break;
             case "username":
-                handleAvailableUsername(parts[1]);
+                handleUserConnect(parts[1]);
                 break;
             case "change":
                 handleChangeColor(parts[1]);
@@ -134,25 +134,25 @@ public class UserThread extends Thread {
         Uno uno = lobby.getUno();
         uno.setCurrentColor(Color.fromString(color));
         UserThread player = lobby.getUno().getPlayerOnMove();
-        player.sendMessage("UNBLOCK " + player.getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), uno.isColorChanged()));
+        player.sendResponse(player.getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), uno.isColorChanged()));
 
     }
 
-    public void sendMessage(String message) {
-        toUser.println(message);
+    public void sendResponse(String response) {
+        toUser.println(response);
     }
 
-    private void createLobbyHandler(String lobbyName) {
+    private void handleCreateLobby(String lobbyName) {
         if (!server.isLobbyNameAvailable(lobbyName))
-            sendMessage("CREATE_LOBBY false " + lobbyName);
+            sendResponse("CREATE_LOBBY false " + lobbyName);
         else {
-            sendMessage("CREATE_LOBBY true " + lobbyName);
+            sendResponse("CREATE_LOBBY true " + lobbyName);
 
             lobby = new Lobby(server, this, lobbyName);
             server.addNewLobby(lobby);
 
             server.broadcastToAll(this, username + " created new lobby!");
-            server.broadcastToAll(this, "NEW LOBBY " + lobbyName);
+            server.broadcastToAll(this, "ADD LOBBY " + lobbyName);
             this.ready = true;
         }
     }
@@ -162,35 +162,33 @@ public class UserThread extends Thread {
         Lobby lobby = server.getLobbyByName(lobbyName);
 
         if (lobby.isPrivateLobby())
-            sendMessage("SHOW_LABEL START Lobby " + lobbyName + " is private!");
+            sendResponse("ERROR START Lobby " + lobbyName + " is private!");
         else if (lobby.isGameStarted())
-            sendMessage("SHOW_LABEL START Game started in this lobby!");
+            sendResponse("ERROR START Game started in this lobby!");
         else {
             lobby.addPlayer(this);
             this.lobby = lobby;
 
-            sendMessage("JOIN " + lobbyName);
-            sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));
+            sendResponse("JOIN " + lobbyName);
+            sendResponse("ADD PLAYER " + server.getPlayersInLobby(this, lobby));
 
             server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
-            server.broadcastToLobby(this, lobby, "NEW PLAYER " + this.username);
+            server.broadcastToLobby(this, lobby, "ADD PLAYER " + this.username);
         }
     }
 
-    private void handleAvailableUsername(String username) {
+    private void handleUserConnect(String username) {
         if (!server.isUsernameAvailable(username))
-            sendMessage("USERNAME false " + username);
+            sendResponse("CONNECT false " + username);
         else {
             server.addNewUser(this);
-            sendMessage("USERNAME true " + username);
+            sendResponse("CONNECT true " + username);
 
             server.broadcastToAll(this, username + " joined server!");
-            sendMessage("VIEW USER " + server.getConnectedUsers(this));
-            sendMessage("VIEW LOBBY " + server.getLobbies());
-            System.out.println(server.getLobbies());
-            System.out.println(server.getConnectedUsers(this));
+            sendResponse("ADD USER " + server.getConnectedUsers(this));
+            sendResponse("ADD LOBBY " + server.getLobbies());
 
-            server.broadcastToAll(this, "NEW USER " + username);
+            server.broadcastToAll(this, "ADD USER " + username);
             this.username = username;
         }
     }
@@ -210,48 +208,78 @@ public class UserThread extends Thread {
         server.broadcastToAll(this, "REMOVE USER " + username);
         server.broadcastToAll(this, "REMOVE PLAYER " + username);
         close();
-        sendMessage("DISCONNECT");
+        sendResponse("DISCONNECT");
 
-        if (lobby != null)
+        if (lobby != null) {
             lobby.removePlayer(this);
+            if (isInGame()) {
+                lobby.getUno().removePlayer(this);
+                lobby.getUno().returnCards(deck.getCards());
+            }
+        }
 
         server.removeUser(this);
     }
 
 
-    private void invitePlayerHandler(String lobbyName, String sender, String receiver) {
+    private void handlePlayerInvite(String lobbyName, String sender, String receiver) {
         UserThread user = server.getUserByUsername(receiver);
         Lobby lobby = server.getLobbyByName(lobbyName);
 
         if (lobby.isPlayerInLobby(user))
-            sendMessage("SHOW_LABEL LOBBY " + user.getUsername() + " is already in lobby!");
+            sendResponse("ERROR LOBBY " + user.getUsername() + " is already in lobby!");
         else if (user.isInGame())
-            sendMessage("SHOW_LABEL LOBBY " + user.getUsername() + " is currently in game!");
+            sendResponse("ERROR LOBBY " + user.getUsername() + " is currently in game!");
         else
             server.broadcast(user, "INVITE " + lobbyName + " " + sender);
     }
 
-    private void acceptInviteHandler(String lobbyName) {
+    private void handleAcceptInvite(String lobbyName) {
         Lobby lobby = server.getLobbyByName(lobbyName);
         lobby.addPlayer(this);
         this.lobby = lobby;
 
         server.broadcastToLobby(this, lobby, this.username + " joined lobby!");
-        server.broadcastToLobby(this, lobby, "NEW PLAYER " + this.username);
+        server.broadcastToLobby(this, lobby, "ADD PLAYER " + this.username);
 
-        sendMessage("ACCEPT " + lobbyName);
-        sendMessage("VIEW PLAYER " + server.getPlayersInLobby(this, lobby));
+        sendResponse("JOIN " + lobbyName);
+        sendResponse("ADD PLAYER " + server.getPlayersInLobby(this, lobby));
     }
 
-    private void declineInviteHandler(String lobbyName) {
+    private void handleDeclineInvite(String lobbyName) {
         server.broadcastToLobby(this, server.getLobbyByName(lobbyName), username + " declined invite!");
     }
 
-    private void leaveLobbyHandler() {
+    private void handleLeaveLobby() {
         lobby.removePlayer(this);
-        sendMessage("LEAVE_LOBBY");
+        sendResponse("LEAVE_LOBBY");
         server.broadcastToLobby(this, lobby, username + " left lobby!");
-        server.broadcastToLobby(this, lobby, "LEAVE " + username);
+        server.broadcastToLobby(this, lobby, "REMOVE PLAYER " + username);
+
+        if (lobby.isEmpty()) {
+            server.removeLobby(lobby);
+            server.broadcastToAll(this, "REMOVE LOBBY " + lobby.getLobbyName());
+            server.broadcastToAll(this, lobby.getLobbyName() + " is removed!");
+        } else {
+            if (lobby.getAdmin().equals(this)) {
+                lobby.setNewAdmin();
+                lobby.getAdmin().setReady(true);
+                lobby.getAdmin().sendResponse("ADMIN " + lobby.getLobbyName());
+                server.broadcastToLobby(lobby.getAdmin(), lobby, lobby.getAdmin().getUsername() + " is new admin!");
+            }
+        }
+
+//        if (lobby.getAdmin().equals(this)) {
+//            lobby.setNewAdmin();
+//            lobby.getAdmin().setReady(true);
+//            sendMessage("ADMIN " + lobby.getLobbyName());
+//        }
+
+//        if (lobby.isEmpty()) {
+//            server.removeLobby(lobby);
+//            server.broadcastToAll(this, "REMOVE LOBBY " + lobby.getLobbyName());
+//        }
+
 //        lobby.removePlayer(this);
 //        sendMessage("You left " + lobby.getLobbyName());
 //
@@ -267,29 +295,16 @@ public class UserThread extends Thread {
 //        }
     }
 
-    private void startGameHandler() {
+    private void handleStartGame() {
         if (lobby.notEnoughPlayers())
-            sendMessage("You need at least 2 players to start the game!");
+            sendResponse("ERROR LOBBY " + ViewUtil.NOT_ENOUGH_PLAYERS_MESSAGE);
         else if (!lobby.arePlayersReady())
-            sendMessage("Players are not ready!");
+            sendResponse("ERROR LOBBY " + ViewUtil.PLAYERS_NOT_READY_MESSAGE);
         else {
-            sendMessage("START");
-            server.broadcastToLobby(this, lobby, "START");
+            server.broadcastInGame(lobby, "START");
             lobby.start();
-            lobby.setInGamePlayers();
+            lobby.setPlayersInGame();
         }
-//        if (!server.isAdmin(username))
-//            sendMessage("Only admin can start the game!");
-//        else if (lobby.notEnoughPlayers())
-//            sendMessage("You need at least 2 players to players to play!");
-//        else if (!lobby.arePlayersReady())
-//            sendMessage("Players are not ready!");
-//        else {
-//            lobby.setInGamePlayers();
-//            sendMessage("Game is starting...");
-//            server.broadcastToLobby(this, lobby, "Game is starting...");
-//            lobby.start();
-//        }
     }
 
     @Override

@@ -1,6 +1,5 @@
 package view;
 
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -19,7 +18,6 @@ public class StartScene {
     private final TextField tfCreate;
     private final Button btnCreateLobby;
     private final Button btnJoinLobby;
-    private final Label lblStartError;
     private Scene scene;
 
     public StartScene() {
@@ -29,43 +27,20 @@ public class StartScene {
         btnCreateLobby = new Button("Create lobby");
         btnJoinLobby = new Button("Join lobby");
         hbCreateJoin = new HBox(20, tfCreate, btnCreateLobby, btnJoinLobby);
-        lblStartError = new Label();
-        vbLobbies = new VBox(10, lblLobby, lvLobbies, hbCreateJoin, lblStartError);
+        vbLobbies = new VBox(10, lblLobby, lvLobbies, hbCreateJoin);
         root = new VBox(10, vbLobbies);
         initializeScene();
     }
 
-    public void setLabelMessage(Label lblMessage) {
-        lblMessage.setText("");
-        root.getChildren().add(0, lblMessage);
-    }
-
-    public void clear() {
-        tfCreate.clear();
-        lblStartError.setText("");
-    }
-
     private void initializeScene() {
-        tfCreate.clear();
-        lblStartError.setText("");
-
-
-        tfCreate.clear();
+        ViewUtil.setRootIdAndStyle(root, "start");
         vbLobbies.setAlignment(Pos.TOP_LEFT);
         tfCreate.setPromptText("Enter lobby name...");
-        root.setId("start");
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(20));
         vbLobbies.setId("start-lobby");
         lblLobby.setId("lblLobby");
-        lblStartError.setId("error");
 
-        scene = new Scene(root, 850, 600);
+        scene = new Scene(root, ViewUtil.WINDOW_WIDTH, ViewUtil.WINDOW_HEIGHT);
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
-    }
-
-    public Scene getScene() {
-        return scene;
     }
 
     public VBox getRoot() {
@@ -100,7 +75,7 @@ public class StartScene {
         return btnJoinLobby;
     }
 
-    public Label getLblStartError() {
-        return lblStartError;
+    public Scene getScene() {
+        return scene;
     }
 }

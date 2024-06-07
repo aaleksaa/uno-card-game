@@ -1,18 +1,12 @@
 package view;
 
-import client.Client;
+import client_server.Client;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Paths;
-
 
 public class ClientView extends Application {
     private Stage primaryStage;
@@ -24,7 +18,6 @@ public class ClientView extends Application {
     private final Label lblMessage = new Label();
     private final ListView<String> lvUsers = new ListView<>();
     private final ListView<String> lvPlayers = new ListView<>();
-    private final Label lblLobbyError = new Label();
     private GameScene gameScene;
 
     @Override
@@ -41,7 +34,6 @@ public class ClientView extends Application {
         client.start();
 
         lblMessage.setId("lblMessage");
-        lblLobbyError.setId("error");
 
 
         primaryStage.setTitle("Uno");
@@ -56,44 +48,45 @@ public class ClientView extends Application {
         adminLobbyScene.getBtnPrivate().setOnAction(e -> privateLobbyEvent());
         adminLobbyScene.getBtnInvite().setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem(), adminLobbyScene.getLblLobbyName()));
         adminLobbyScene.getBtnStart().setOnAction(e -> client.sendRequest("start"));
+        adminLobbyScene.getBtnLeave().setOnAction(e -> client.sendRequest("leave"));
 
+        lobbyScene.getBtnLeave().setOnAction(e -> client.sendRequest("leave"));
         lobbyScene.getBtnInvite().setOnAction(e -> invitePlayerEvent(lvUsers.getSelectionModel().getSelectedItem(), lobbyScene.getLblLobbyName()));
         lobbyScene.getBtnReady().setOnAction(e -> setReadyEvent());
 
         gameScene.getBtnDraw().setOnAction(e -> client.sendRequest("DRAW"));
 
-        primaryStage.setOnCloseRequest(event -> {
-            // Sprečite zatvaranje prozora
-            event.consume();
-
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmation Dialog");
-            alert.setHeaderText("Are you sure you want to exit?");
-            alert.setContentText("Please confirm your action.");
-
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    client.sendRequest("DISCONNECT");
-                    primaryStage.close();
-                }
-            });
-        });
+        primaryStage.setOnCloseRequest(e -> disconnectEvent());
     }
 
     //-------------------------
     // BUTTON EVENTS
     //-------------------------
 
+    private void disconnectEvent() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation Dialog");
+        alert.setHeaderText("Are you sure you want to exit?");
+        alert.setContentText("Please confirm your action.");
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                client.sendRequest("DISCONNECT");
+                primaryStage.close();
+            }
+        });
+    }
+
     private void sendUsernameEvent(String username) {
         if (username.isEmpty())
-            ViewUtil.setTextLabel(connectScene.getLblConnectError(), "Fill in username field!");
+            ViewUtil.showErrorAlert(ViewUtil.USERNAME_INPUT_MESSAGE);
         else
             client.sendRequest("username " + username);
     }
 
     private void createLobbyEvent(String lobbyName) {
         if (lobbyName.isEmpty())
-            ViewUtil.setTextLabel(startScene.getLblStartError(), "Fill in lobby name field!");
+            ViewUtil.showErrorAlert(ViewUtil.LOBBY_INPUT_MESSAGE);
         else
             client.sendRequest("create_lobby " + lobbyName);
     }
@@ -111,14 +104,14 @@ public class ClientView extends Application {
 
     private void invitePlayerEvent(String username, Label lblLobbyName) {
         if (username == null)
-            ViewUtil.setTextLabel(lblLobbyError, "User is not selected!");
+            ViewUtil.showErrorAlert(ViewUtil.USER_SELECT_MESSAGE);
         else
             client.sendRequest("invite " + lblLobbyName.getText() + " " + client.getUsername() + " " + username);
     }
 
     private void joinLobbyEvent(String lobbyName) {
         if (lobbyName == null)
-            ViewUtil.setTextLabel(startScene.getLblStartError(), "Lobby is not selected!");
+            ViewUtil.showErrorAlert(ViewUtil.LOBBY_SELECT_MESSAGE);
         else
             client.sendRequest("JOIN " + lobbyName);
     }
@@ -137,16 +130,9 @@ public class ClientView extends Application {
     // HANDLE
     //---------------------
 
-    public void handleError(String errorScene, String message) {
-        if (errorScene.equals("START"))
-            ViewUtil.setTextLabel(startScene.getLblStartError(), message);
-        else if (errorScene.equals("LOBBY"))
-            ViewUtil.setTextLabel(lblLobbyError, message);
-    }
-
     public void handleConnect(String success, String username) {
         if (success.equals("false"))
-            ViewUtil.handleInvalidInput(connectScene.getLblConnectError(), connectScene.getTfUsername(), "Username " + username + " is already taken!");
+            ViewUtil.handleInvalidInput(connectScene.getTfUsername(), "Username " + username + " is already taken!");
         else {
             setStartScene();
             client.setUsername(username);
@@ -155,9 +141,9 @@ public class ClientView extends Application {
 
     public void handleCreateLobby(String success, String lobbyName) {
         if (success.equals("false"))
-            ViewUtil.handleInvalidInput(startScene.getLblStartError(), startScene.getTfCreate(), "Lobby " + lobbyName + " already exists!");
+            ViewUtil.handleInvalidInput(startScene.getTfCreate(), "Lobby " + lobbyName + " already exists!");
         else
-            setAdminLobbyScene(lobbyName);
+            setAdminLobbyScene(lobbyName, false);
     }
 
 
@@ -167,29 +153,36 @@ public class ClientView extends Application {
 
     public void setStartScene() {
         Platform.runLater(() -> {
-            startScene.clear();
-            startScene.setLabelMessage(lblMessage);
+            startScene.getTfCreate().clear();
+
+            ViewUtil.removeListView(adminLobbyScene.getVbPlayers(), adminLobbyScene.getVbInvite(), lvPlayers, lvUsers);
+            ViewUtil.removeListView(lobbyScene.getVbPlayers(), lobbyScene.getVbInvite(), lvPlayers, lvUsers);
+
+            gameScene.getHbCards().getChildren().clear();
+            ViewUtil.insertLblMessage(startScene.getRoot(), lblMessage);
             primaryStage.setScene(startScene.getScene());
         });
     }
 
     public void setLobbyScene(String lobbyName) {
         Platform.runLater(() -> {
-            lvPlayers.getItems().add(client.getUsername());
             ViewUtil.setTextLabel(lobbyScene.getLblLobbyName(), lobbyName);
-            lobbyScene.setListView(lvPlayers, lvUsers);
-            lobbyScene.setLabel(lblMessage, lblLobbyError);
+            ViewUtil.setListView(lobbyScene.getVbPlayers(), lobbyScene.getVbInvite(), lvPlayers, lvUsers);
+            lvPlayers.getItems().add(client.getUsername());
+            ViewUtil.insertLblMessage(lobbyScene.getRoot(), lblMessage);
             primaryStage.setScene(lobbyScene.getScene());
         });
     }
 
-    public void setAdminLobbyScene(String lobbyName) {
+    public void setAdminLobbyScene(String lobbyName, boolean changeToAdmin) {
         Platform.runLater(() -> {
-            lvPlayers.getItems().add(client.getUsername());
-            ViewUtil.setTextLabel(adminLobbyScene.getLblLobbyName(), lobbyName);
-            adminLobbyScene.setListView(lvPlayers, lvUsers);
-            adminLobbyScene.setLabel(lblMessage, lblLobbyError);
+            if (changeToAdmin)
+                ViewUtil.removeListView(lobbyScene.getVbPlayers(), lobbyScene.getVbInvite(), lvPlayers, lvUsers);
 
+            ViewUtil.setTextLabel(adminLobbyScene.getLblLobbyName(), lobbyName);
+            ViewUtil.setListView(adminLobbyScene.getVbPlayers(), adminLobbyScene.getVbInvite(), lvPlayers, lvUsers);
+            lvPlayers.getItems().add(client.getUsername());
+            ViewUtil.insertLblMessage(adminLobbyScene.getRoot(), lblMessage);
             primaryStage.setScene(adminLobbyScene.getScene());
         });
     }
@@ -204,20 +197,16 @@ public class ClientView extends Application {
     public void setCards(String cards) {
         Platform.runLater(() -> {
             String[] parts = cards.split(" ");
-            for (int i = 1; i < parts.length; i++) {
-                ImageView iv = new ImageView(new Image("file:images/cards/" + parts[i] + ".png"));
-                iv.setFitWidth(80);
-                iv.setFitHeight(150);
-                Button btnCard = new Button();
-                btnCard.setGraphic(iv);
-                String card = parts[i];
+
+            for (String part : parts) {
+
+                Button btnCard = ViewUtil.createCardButton(part);
                 gameScene.getHbCards().getChildren().add(btnCard);
 
-                if (!btnCard.isDisabled())
-                    btnCard.setOnAction(e -> {
-                        client.sendRequest("play " + card);
-                        gameScene.getHbCards().getChildren().remove(btnCard);
-                    });
+                btnCard.setOnAction(e -> {
+                    client.sendRequest("play " + btnCard.getUserData());
+                    gameScene.getHbCards().getChildren().remove(btnCard);
+                });
             }
         });
     }
@@ -225,26 +214,16 @@ public class ClientView extends Application {
 
     public void enableCards(String cards) {
         Platform.runLater(() -> {
-            try {
-                String[] parts = cards.split(" ");
+            String[] parts = cards.split(" ");
 
-                for (Node node : gameScene.getHbCards().getChildren()) {
-                    Button btn = (Button) node;
-                    ImageView iv = (ImageView) btn.getGraphic();
-                    Image img = iv.getImage();
-                    String url = img.getUrl();
-                    URL imageURL = new URL(url);
-                    String fileName = Paths.get(imageURL.getPath()).getFileName().toString();
-                    String name = fileName.substring(0, fileName.lastIndexOf('.'));
+            for (Node node : gameScene.getHbCards().getChildren()) {
+                Button btnCard = (Button) node;
 
-                    for (int i = 1; i < parts.length; i++)
-                        if (name.equals(parts[i])) {
-                            btn.setDisable(false);
-                            break;
-                        }
-                }
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+                for (int i = 1; i < parts.length; i++)
+                    if (btnCard.getUserData().equals(parts[i])) {
+                        btnCard.setDisable(false);
+                        break;
+                    }
             }
         });
     }
@@ -262,12 +241,14 @@ public class ClientView extends Application {
         String[] parts = items.split(" ");
 
         for (String part : parts) {
-            if (itemType.equals("LOBBY"))
-                ViewUtil.addItemToList(startScene.getLvLobbies(), part);
-            else if (itemType.equals("USER"))
-                ViewUtil.addItemToList(lvUsers, part);
-            else
-                ViewUtil.addItemToList(lvPlayers, part);
+            if (!part.isEmpty()) {
+                if (itemType.equals("LOBBY"))
+                    ViewUtil.addItemToList(startScene.getLvLobbies(), part);
+                else if (itemType.equals("USER"))
+                    ViewUtil.addItemToList(lvUsers, part);
+                else
+                    ViewUtil.addItemToList(lvPlayers, part);
+            }
         }
     }
 
@@ -289,9 +270,7 @@ public class ClientView extends Application {
 
 
     public void enableDrawCard() {
-        Platform.runLater(() -> {
-            gameScene.disableBtnDraw(false);
-        });
+        Platform.runLater(() -> gameScene.disableBtnDraw(false));
     }
 
     public void showChangeColorAlert() {
@@ -311,16 +290,16 @@ public class ClientView extends Application {
 
             alert.showAndWait().ifPresent(response -> {
                 if (response == btnRed) {
-                    client.sendRequest("change Red");
+                    client.sendRequest("change RED");
                     alert.close();
                 } else if (response == btnYellow) {
-                    client.sendRequest("change Yellow");
+                    client.sendRequest("change YELLOW");
                     alert.close();
                 } else if (response == btnBlue) {
-                    client.sendRequest("change Blue");
+                    client.sendRequest("change BLUE");
                     alert.close();
                 } else if (response == btnGreen) {
-                    client.sendRequest("change Green");
+                    client.sendRequest("change GREEN");
                     alert.close();
                 }
             });
@@ -351,40 +330,15 @@ public class ClientView extends Application {
         });
     }
 
-    public void addCards(String cards) {
+    public void showFinishAlert(String finishText) {
         Platform.runLater(() -> {
-            String[] parts = cards.split(" ");
-            for (int i = 1; i < parts.length; i++) {
-                ImageView iv = new ImageView(new Image("file:images/cards/" + parts[i] + ".png"));
-                iv.setFitWidth(80);
-                iv.setFitHeight(150);
-                Button btnCard = new Button();
-                btnCard.setGraphic(iv);
-                String card = parts[i];
-                gameScene.getHbCards().getChildren().add(btnCard);
-                btnCard.setOnAction(e -> {
-                    client.sendRequest("play " + card);
-                    gameScene.getHbCards().getChildren().remove(btnCard);
-                });
-            }
-        });
-    }
-
-    public void showFinishAlert(String response) {
-        Platform.runLater(() -> {
-            String[] parts = response.split(" ", 2);
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("GAME OVER");
             alert.setHeaderText("GAME OVER");
-            alert.setContentText(parts[1]);
+            alert.setContentText(finishText);
 
-
-            ButtonType btnOK = new ButtonType("OK");
-
-            alert.getButtonTypes().setAll(btnOK);
-
-            alert.showAndWait().ifPresent(e -> {
-                if (e == btnOK) {
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
                     setStartScene();
                     alert.close();
                 }

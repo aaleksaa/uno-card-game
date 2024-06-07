@@ -42,17 +42,43 @@ public class LobbyScene {
         initializeScene();
     }
 
-    public void setLabel(Label lblMessage, Label lblError) {
-        lblMessage.setText("");
-        lblError.setText("");
-        root.getChildren().add(0, lblMessage);
-        vbPlayers.getChildren().add(2, lblError);
+    private void initializeScene() {
+        ViewUtil.setRootIdAndStyle(root, "start");
+        lblLobbyName.setId("lblLobby");
+        hbLobby.setId("start-lobby");
+        lblPlayers.setId("lblMessage");
+        lblUsers.setId("lblMessage");
+
+        scene = new Scene(root, ViewUtil.WINDOW_WIDTH, ViewUtil.WINDOW_HEIGHT);
+        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
     }
 
+    public VBox getRoot() {
+        return root;
+    }
 
-    public void setListView(ListView<String> lvPlayers, ListView<String> lvUsers) {
-        vbPlayers.getChildren().add(1, lvPlayers);
-        vbInvite.getChildren().add(1, lvUsers);
+    public Label getLblPlayers() {
+        return lblPlayers;
+    }
+
+    public HBox getHbButtons() {
+        return hbButtons;
+    }
+
+    public HBox getHbLobby() {
+        return hbLobby;
+    }
+
+    public VBox getVbInvite() {
+        return vbInvite;
+    }
+
+    public VBox getVbPlayers() {
+        return vbPlayers;
+    }
+
+    public Label getLblUsers() {
+        return lblUsers;
     }
 
     public Button getBtnInvite() {
@@ -71,18 +97,11 @@ public class LobbyScene {
         btnReady.setText(text);
     }
 
-    private void initializeScene() {
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(20));
-        root.setId("start");
-        lblLobbyName.setId("lblLobby");
-        hbLobby.setId("start-lobby");
-        lblPlayers.setId("lblMessage");
-        lblUsers.setId("lblMessage");
 
-        scene = new Scene(root, 850, 600);
-        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
+    public Button getBtnLeave() {
+        return btnLeave;
     }
+
 
     public Label getLblLobbyName() {
         return lblLobbyName;

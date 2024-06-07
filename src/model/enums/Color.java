@@ -1,11 +1,11 @@
 package model.enums;
 
 public enum Color {
-    RED("Red"),
-    BLUE("Blue"),
-    GREEN("Green"),
-    YELLOW("Yellow"),
-    WILD("Wild");
+    RED("RED"),
+    BLUE("BLUE"),
+    GREEN("GREEN"),
+    YELLOW("YELLOW"),
+    WILD("WILD");
 
     private final String color;
 
@@ -15,11 +15,11 @@ public enum Color {
 
     public static Color fromString(String color) {
         return switch (color) {
-            case "Red" -> RED;
-            case "Blue" -> BLUE;
-            case "Green" -> GREEN;
-            case "Yellow" -> YELLOW;
-            case "Wild" -> WILD;
+            case "RED" -> RED;
+            case "BLUE" -> BLUE;
+            case "GREEN" -> GREEN;
+            case "YELLOW" -> YELLOW;
+            case "WILD" -> WILD;
             default -> null;
         };
     }

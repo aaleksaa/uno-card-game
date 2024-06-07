@@ -1,6 +1,6 @@
-package server;
+package client_server;
 
-import client.UserThread;
+import model.entities.Lobby;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -107,24 +107,29 @@ public class Server {
 
     public void broadcastToAll(UserThread sender, String message) {
         synchronized (users) {
-            users.stream().filter(user -> user != sender).forEach(user -> user.sendMessage(message));
+            users.stream().filter(user -> user != sender).forEach(user -> user.sendResponse(message));
         }
     }
 
     public void broadcastToLobby(UserThread sender, Lobby lobby, String message) {
         synchronized (lobby.getPlayers()) {
-            lobby.getPlayers().stream().filter(player -> player != sender).forEach(player -> player.sendMessage(message));
+            lobby.getPlayers().stream().filter(player -> player != sender).forEach(player -> player.sendResponse(message));
         }
     }
 
     public void broadcastInGame(Lobby lobby, String message) {
         synchronized (lobby.getPlayers()) {
-            lobby.getPlayers().forEach(player -> player.sendMessage(message));
+            lobby.getPlayers().forEach(player -> player.sendResponse(message));
         }
     }
 
     public void broadcast(UserThread receiver, String message) {
-        receiver.sendMessage(message);
+        receiver.sendResponse(message);
     }
 
+    public void broadcastToSpectators(Lobby lobby, String message) {
+        synchronized (lobby.getUno().getSpectators()) {
+            lobby.getUno().getSpectators().forEach(spectator -> spectator.sendResponse(message));
+        }
+    }
 }

@@ -9,6 +9,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import javax.swing.text.View;
+
 public class AdminLobbyScene {
     private final VBox root;
     private final Label lblLobbyName;
@@ -44,16 +46,43 @@ public class AdminLobbyScene {
         initializeScene();
     }
 
-    public void setLabel(Label lblMessage, Label lblError) {
-        lblMessage.setText("");
-        lblError.setText("");
-        root.getChildren().add(0, lblMessage);
-        vbPlayers.getChildren().add(3, lblError);
+    private void initializeScene() {
+        ViewUtil.setRootIdAndStyle(root, "start");
+        lblLobbyName.setId("lblLobby");
+        hbLobby.setId("start-lobby");
+        lblPlayers.setId("lblMessage");
+        lblUsers.setId("lblMessage");
+
+        scene = new Scene(root, ViewUtil.WINDOW_WIDTH, ViewUtil.WINDOW_HEIGHT);
+        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
     }
 
-    public void setListView(ListView<String> lvPlayers, ListView<String> lvUsers) {
-        vbPlayers.getChildren().add(1, lvPlayers);
-        vbInvite.getChildren().add(1, lvUsers);
+    public VBox getRoot() {
+        return root;
+    }
+
+    public Label getLblPlayers() {
+        return lblPlayers;
+    }
+
+    public HBox getHbButtons() {
+        return hbButtons;
+    }
+
+    public HBox getHbLobby() {
+        return hbLobby;
+    }
+
+    public VBox getVbPlayers() {
+        return vbPlayers;
+    }
+
+    public VBox getVbInvite() {
+        return vbInvite;
+    }
+
+    public Label getLblUsers() {
+        return lblUsers;
     }
 
     public boolean privateBtnText() {
@@ -72,18 +101,9 @@ public class AdminLobbyScene {
         return btnInvite;
     }
 
-    private void initializeScene() {
 
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(20));
-        root.setId("start");
-        lblLobbyName.setId("lblLobby");
-        hbLobby.setId("start-lobby");
-        lblPlayers.setId("lblMessage");
-        lblUsers.setId("lblMessage");
-
-        scene = new Scene(root, 850, 600);
-        scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
+    public Button getBtnLeave() {
+        return btnLeave;
     }
 
     public Button getBtnStart() {

@@ -1,6 +1,5 @@
-package client;
+package client_server;
 
-import server.Server;
 import view.ClientView;
 import view.ViewUtil;
 
@@ -10,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class Client extends Thread {
     private InetAddress address;
@@ -67,19 +67,22 @@ public class Client extends Thread {
         String[] parts = response.split(" ", 3);
 
         switch (parts[0]) {
-            case "USERNAME":
+            case "CONNECT":
                 clientView.handleConnect(parts[1], parts[2]);
                 break;
-            case "SHOW_LABEL":
-                clientView.handleError(parts[1], parts[2]);
+            case "ERROR":
+                ViewUtil.showErrorAlert(parts[2]);
                 break;
-            case "NEW", "VIEW":
+            case "ADD":
                 clientView.handleAddItems(parts[1], parts[2]);
+                break;
+            case "REMOVE":
+                clientView.handleRemoveItem(parts[1], parts[2]);
                 break;
             case "CREATE_LOBBY":
                 clientView.handleCreateLobby(parts[1], parts[2]);
                 break;
-            case "JOIN", "ACCEPT":
+            case "JOIN":
                 clientView.setLobbyScene(parts[1]);
                 break;
             case "INVITE":
@@ -89,7 +92,7 @@ public class Client extends Thread {
                 clientView.setGameScene();
                 break;
             case "CARDS":
-                clientView.setCards(response);
+                clientView.setCards(parts[2]);
                 break;
             case "CURRENT":
                 clientView.setCurrentCard(parts[1]);
@@ -103,9 +106,6 @@ public class Client extends Thread {
             case "GAME_INFO":
                 clientView.showGameInfo(parts[1], parts[2]);
                 break;
-            case "DRAW":
-                clientView.addCards(response);
-                break;
             case "CHANGE":
                 clientView.showChangeColorAlert();
                 break;
@@ -113,10 +113,13 @@ public class Client extends Thread {
                 clientView.enableDrawCard();
                 break;
             case "FINISH":
-                clientView.showFinishAlert(response);
+                clientView.showFinishAlert(parts[2]);
                 break;
-            case "REMOVE":
-                clientView.handleRemoveItem(parts[1], parts[2]);
+            case "LEAVE_LOBBY":
+                clientView.setStartScene();
+                break;
+            case "ADMIN":
+                clientView.setAdminLobbyScene(parts[1], true);
                 break;
             case "DISCONNECT":
                 close();

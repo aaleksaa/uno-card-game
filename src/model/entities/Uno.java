@@ -1,90 +1,106 @@
 package model.entities;
 
-import client.UserThread;
+import client_server.UserThread;
 import model.enums.CardType;
 import model.enums.Color;
-import model.enums.Direction;
-import server.Lobby;
-import server.Server;
+import client_server.Server;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Uno {
-    private Server server;
-    private Lobby lobby;
-    private Deck deck;
-    private Queue<UserThread> queue = new ConcurrentLinkedQueue<>();
-    private Deque<UserThread> test = new ConcurrentLinkedDeque<>();
+    private final Server server;
+    private final Lobby lobby;
+    private final UnoDeck deck;
+    private final Deque<UserThread> queue;
     private Card currentCard;
     private Color currentColor;
     private UserThread playerOnMove;
-    private Direction direction;
+    private boolean directionChanged;
     private boolean colorChanged;
-    private List<UserThread> spectators = new ArrayList<>();
-
-    public static final int NUMBER_OF_CARDS = 7;
+    private final List<UserThread> spectators;
 
     public Uno(Server server, Lobby lobby, Set<UserThread> players) {
         this.server = server;
         this.lobby = lobby;
-        this.deck = new Deck();
+        this.deck = new UnoDeck();
+        this.queue = new ConcurrentLinkedDeque<>();
         this.queue.addAll(players);
-        this.test.addAll(players);
-        dealCards();
+        deck.dealCards(queue);
         initCurrentCard();
         this.currentColor = currentCard.getColor();
-        this.playerOnMove = queue.peek();
-        this.direction = Direction.CLOCKWISE;
+        this.playerOnMove = getNextPlayer();
+        this.spectators = new ArrayList<>();
         sendGameInfo();
+    }
+
+    private void initCurrentCard() {
+        while (true) {
+            Card card = deck.dealCard();
+
+            if (card instanceof NumberCard) {
+                currentCard = card;
+                break;
+            }
+
+            deck.addCardToDeck(card);
+        }
+    }
+
+    public void removePlayer(UserThread player) {
+        if (queue.contains(player))
+            queue.remove(player);
+        else
+            spectators.remove(player);
+    }
+
+    public void returnCards(List<Card> cards) {
+        deck.addCardsToDeck(cards);
+    }
+
+    public List<UserThread> getSpectators() {
+        return spectators;
     }
 
     public Color getCurrentColor() {
         return currentColor;
     }
 
-    private void changeDirection() {
-        if (direction == Direction.CLOCKWISE)
-            direction = Direction.COUNTER_CLOCKWISE;
-        else
-            direction = Direction.CLOCKWISE;
-    }
-
-    private void initCurrentCard() {
-        do {
-            currentCard = deck.dealCard();
-        } while (!(currentCard instanceof NumberCard));
-    }
-
-
-    private boolean isFinished() {
-        return queue.size() == 1;
-    }
-
-    private UserThread getCurrentPlayer() {
-        if (direction == Direction.CLOCKWISE)
-            return test.pollFirst();
-        return test.pollLast();
-    }
-
-    private UserThread playerOnMove() {
-        if (direction == Direction.CLOCKWISE)
-            return test.peekFirst();
-        return null;
-    }
-
-    public Deck getDeck() {
-        return deck;
+    public Card getCurrentCard() {
+        return currentCard;
     }
 
     public UserThread getPlayerOnMove() {
         return playerOnMove;
     }
 
+    public boolean isColorChanged() {
+        return colorChanged;
+    }
+
+    public void setCurrentColor(Color color) {
+        this.currentColor = color;
+    }
+
+    private void changeDirection() {
+        directionChanged = !directionChanged;
+    }
+
+    private boolean isFinished() {
+        return queue.size() == 1;
+    }
+
+    private UserThread getCurrentPlayer() {
+        return !directionChanged ? queue.pollFirst() : queue.pollLast();
+    }
+
+    private UserThread getNextPlayer() {
+        return !directionChanged ? queue.peekFirst() : queue.peekLast();
+    }
+
     public synchronized void playMove(String move) {
-        UserThread currPlayer = queue.poll();
-        Card card = currPlayer.getDeck().getCard(move);
+        UserThread currPlayer = getCurrentPlayer();
+        Card card = currPlayer.getDeck().getCardFromDeck(move);
 
         if (card instanceof NumberCard)
             playNumberCard(currPlayer, card);
@@ -95,57 +111,101 @@ public class Uno {
 
         deck.addCardToDeck(card);
 
-        if (!isFinished()) {
-            sendGameInfo();
-            server.broadcastInGame(lobby, "BLOCK");
-
-            if (!colorChanged)
-                playerOnMove.sendMessage(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
-        } else {
-            spectators.add(queue.poll());
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < spectators.size(); i++)
-                sb.append(i + 1).append(" - ").append(spectators.get(i)).append("  ");
-
-
-            server.broadcastInGame(lobby, "REMOVE LOBBY " + lobby.getLobbyName());
-            server.removeLobby(lobby);
-            server.broadcastInGame(lobby, "FINISH " + sb);
-        }
+        if (!isFinished())
+            continueGame();
+        else
+            endGame();
     }
 
-    public boolean isColorChanged() {
-        return colorChanged;
+    private void continueGame() {
+        sendGameInfo();
+        server.broadcastInGame(lobby, "BLOCK");
+
+        if (!isColorChanged())
+            playerOnMove.sendResponse(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
+    }
+
+    private void endGame() {
+        spectators.add(queue.poll());
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < spectators.size(); i++)
+            sb.append(i + 1).append(" - ").append(spectators.get(i)).append("  ");
+
+        server.broadcastInGame(lobby, "REMOVE LOBBY " + lobby.getLobbyName());
+        server.broadcastInGame(lobby, "FINISH FINISH " + sb);
+        server.removeLobby(lobby);
     }
 
     private void playNumberCard(UserThread player, Card card) {
+        handleCardPlay(player, card);
+        addToQueue(player);
+        playerOnMove = getNextPlayer();
+    }
+
+    private void handleCardPlay(UserThread player, Card card) {
         player.getDeck().removeCard(card);
         currentCard = card;
         currentColor = card.getColor();
         colorChanged = false;
+    }
 
-
+    private void skipNextPlayer(UserThread player) {
         addToQueue(player);
-        playerOnMove = queue.peek();
+        UserThread skippedPlayer = getCurrentPlayer();
+        addToQueue(skippedPlayer);
+        playerOnMove = getNextPlayer();
+    }
+
+    private void reverseDirection(UserThread player) {
+        if (queue.size() == 1)
+            skipNextPlayer(player);
+        else {
+            changeDirection();
+            addToQueue(player);
+            playerOnMove = getNextPlayer();
+        }
     }
 
     private void playActionCard(UserThread player, Card card) {
-        player.getDeck().removeCard(card);
-        currentCard = card;
-        currentColor = card.getColor();
-        colorChanged = false;
+        handleCardPlay(player, card);
+
+        switch (card.getCardType()) {
+            case DRAW_TWO:
+                addToQueue(player);
+                playerOnMove = getNextPlayer();
+                playerOnMove.sendResponse("CARDS CARDS " + drawCards(playerOnMove, 2));
+                break;
+            case SKIP:
+                skipNextPlayer(player);
+                break;
+            case REVERSE:
+                reverseDirection(player);
+                break;
+        }
+    }
+
+    private void playWildCard(UserThread player, Card card) {
+        handleCardPlay(player, card);
+        playerOnMove.sendResponse("CHANGE");
+        colorChanged = true;
 
         addToQueue(player);
+        playerOnMove = getNextPlayer();
 
-        if (card.getCardType() == CardType.DRAW_TWO) {
-            playerOnMove = queue.peek();
-            playerOnMove.sendMessage("DRAW " + drawCards(playerOnMove, 2));
-        } else if (card.getCardType() == CardType.SKIP) {
-            UserThread skippedPlayer = queue.poll();
-            queue.add(skippedPlayer);
-            playerOnMove = queue.peek();
+        if (card.getCardType() == CardType.DRAW_FOUR)
+            playerOnMove.sendResponse("CARDS CARDS " + drawCards(playerOnMove, 4));
+    }
+
+    private void addToQueue(UserThread player) {
+        if (!player.getDeck().isEmpty()) {
+            if (!directionChanged)
+                queue.addLast(player);
+            else
+                queue.addFirst(player);
         }
+        else
+            spectators.add(player);
     }
 
     private void sendGameInfo() {
@@ -153,36 +213,20 @@ public class Uno {
         for (UserThread player : queue)
             sb.append(player.getUsername()).append(" - ").append(player.getDeck().getNumberOfCards()).append(" ");
 
-        server.broadcastInGame(lobby, "CURRENT " + currentCard);
-        server.broadcastInGame(lobby, "GAME_INFO CURR_PLAYER Current player " + playerOnMove);
-        server.broadcastInGame(lobby, "GAME_INFO CARDS_NUM " + sb);
+        String currentCardMessage = "CURRENT " + currentCard;
+        String currentPlayerMessage = "GAME_INFO CURR_PLAYER Current player " + playerOnMove;
+        String cardsNumberMessage = "GAME_INFO CARDS_NUM " + sb;
+
+        server.broadcastInGame(lobby, currentCardMessage);
+        server.broadcastInGame(lobby, currentPlayerMessage);
+        server.broadcastInGame(lobby, cardsNumberMessage);
+
+        if (!spectators.isEmpty()) {
+            server.broadcastToSpectators(lobby, currentCardMessage);
+            server.broadcastToSpectators(lobby, currentPlayerMessage);
+            server.broadcastToSpectators(lobby, cardsNumberMessage);
+        }
     }
-
-    private void playWildCard(UserThread player, Card card) {
-        player.getDeck().removeCard(card);
-        currentCard = card;
-        playerOnMove.sendMessage("CHANGE");
-        colorChanged = true;
-
-        addToQueue(player);
-
-        playerOnMove = queue.peek();
-        if (card.getCardType() == CardType.DRAW_FOUR)
-            playerOnMove.sendMessage("DRAW " + drawCards(playerOnMove, 4));
-    }
-
-    private void addToQueue(UserThread player) {
-        if (!player.getDeck().isEmpty())
-            queue.add(player);
-        else
-            spectators.add(player);
-    }
-
-
-    public void setCurrentColor(Color color) {
-        this.currentColor = color;
-    }
-
 
     private String drawCards(UserThread player, int amount) {
         StringBuilder sb = new StringBuilder();
@@ -196,31 +240,12 @@ public class Uno {
         return sb.toString();
     }
 
-    public Card getCurrentCard() {
-        return currentCard;
-    }
-
-    public void dealCards() {
-        for (UserThread player : queue) {
-            List<Card> cards = new ArrayList<>();
-
-            for (int i = 0; i < NUMBER_OF_CARDS; i++)
-                cards.add(deck.dealCard());
-
-            player.setDeck(new PlayerDeck(cards));
-        }
-    }
-
     public void draw() {
         Card card = deck.dealCard();
         playerOnMove.getDeck().addCard(card);
-        playerOnMove.sendMessage("DRAW " + card);
-        playerOnMove.sendMessage("BLOCK");
-        playerOnMove.sendMessage(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
+        playerOnMove.sendResponse("CARDS CARDS " + card);
+        playerOnMove.sendResponse("BLOCK");
+        playerOnMove.sendResponse(playerOnMove.getDeck().availableCards(currentCard, currentColor, colorChanged));
         sendGameInfo();
-    }
-
-    public void setCurrentCard(Card currentCard) {
-        this.currentCard = currentCard;
     }
 }

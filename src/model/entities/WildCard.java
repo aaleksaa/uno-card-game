@@ -6,8 +6,8 @@ import model.enums.Color;
 import java.util.Objects;
 
 public class WildCard extends Card {
-    public WildCard(CardType cardType) {
-        super(Color.WILD, cardType);
+    public WildCard(Color color, CardType cardType) {
+        super(color, cardType);
     }
 
     @Override

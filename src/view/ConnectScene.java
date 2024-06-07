@@ -9,6 +9,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
+import javax.swing.text.View;
+
 
 public class ConnectScene {
     private final VBox root;
@@ -16,29 +18,29 @@ public class ConnectScene {
     private final Text txtTitle;
     private final TextField tfUsername;
     private final Button btnConnect;
-    private final Label lblConnectError;
     private Scene scene;
 
     public ConnectScene() {
         txtTitle = new Text("Welcome to UNO server!");
         tfUsername = new TextField();
         btnConnect = new Button("Connect");
-        lblConnectError = new Label();
-        vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect, lblConnectError);
+        vbConnect = new VBox(20, txtTitle, tfUsername, btnConnect);
         root = new VBox(10, vbConnect);
         initializeScene();
     }
 
     private void initializeScene() {
-        root.setId("root");
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(20));
+        ViewUtil.setRootIdAndStyle(root, "root");
         vbConnect.setAlignment(Pos.CENTER);
         vbConnect.setId("vb-connect");
         tfUsername.setPromptText("Enter username...");
 
-        scene = new Scene(root, 850, 600);
+        scene = new Scene(root, ViewUtil.WINDOW_WIDTH, ViewUtil.WINDOW_HEIGHT);
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
+    }
+
+    public VBox getRoot() {
+        return root;
     }
 
     public VBox getVbConnect() {
@@ -55,10 +57,6 @@ public class ConnectScene {
 
     public Button getBtnConnect() {
         return btnConnect;
-    }
-
-    public Label getLblConnectError() {
-        return lblConnectError;
     }
 
     public Scene getScene() {

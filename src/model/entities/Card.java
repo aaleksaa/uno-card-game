@@ -28,7 +28,7 @@ public abstract class Card {
         if (inputType == null)
             return new NumberCard(inputColor, Integer.parseInt(parts[1]));
         else if (inputType == CardType.DRAW_FOUR || inputType == CardType.CHANGE_COLOR)
-            return new WildCard(inputType);
+            return new WildCard(inputColor, inputType);
         else
             return new ActionCard(inputColor, inputType);
     }

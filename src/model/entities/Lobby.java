@@ -1,11 +1,11 @@
-package server;
+package model.entities;
 
-import client.UserThread;
+import client_server.Server;
+import client_server.UserThread;
 import model.entities.Uno;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 public class Lobby {
@@ -27,13 +27,26 @@ public class Lobby {
 
     public void start() {
         uno = new Uno(server, this, players);
-
-        for (UserThread player : players)
-            player.sendMessage("CARDS " + player.getDeck().getCardsString());
-
+        players.forEach(player -> player.sendResponse("CARDS CARDS " + player.getDeck()));
         gameStarted = true;
         server.broadcastInGame(this, "BLOCK");
-        uno.getPlayerOnMove().sendMessage(uno.getPlayerOnMove().getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), false));
+        uno.getPlayerOnMove().sendResponse(uno.getPlayerOnMove().getDeck().availableCards(uno.getCurrentCard(), uno.getCurrentColor(), false));
+    }
+
+    public String getLobbyName() {
+        return lobbyName;
+    }
+
+    public Set<UserThread> getPlayers() {
+        return players;
+    }
+
+    public UserThread getAdmin() {
+        return admin;
+    }
+
+    public boolean isPrivateLobby() {
+        return privateLobby;
     }
 
     public boolean isGameStarted() {
@@ -44,26 +57,16 @@ public class Lobby {
         return uno;
     }
 
-    public void setNewAdmin() {
-        Iterator<UserThread> iter = players.iterator();
+    public void setPrivateLobby(boolean privateLobby) {
+        this.privateLobby = privateLobby;
+    }
 
-        admin = iter.next();
+    public void setNewAdmin() {
+        admin = players.iterator().next();
     }
 
     public boolean isPlayerInLobby(UserThread player) {
         return players.contains(player);
-    }
-
-    public String getLobbyName() {
-        return lobbyName;
-    }
-
-    public UserThread getAdmin() {
-        return admin;
-    }
-
-    public Set<UserThread> getPlayers() {
-        return players;
     }
 
     public void addPlayer(UserThread user) {
@@ -72,10 +75,6 @@ public class Lobby {
 
     public void removePlayer(UserThread user) {
         players.remove(user);
-    }
-
-    public boolean isPrivateLobby() {
-        return privateLobby;
     }
 
     public boolean isEmpty() {
@@ -90,14 +89,9 @@ public class Lobby {
         return players.stream().allMatch(UserThread::isReady);
     }
 
-    public void setInGamePlayers() {
+    public void setPlayersInGame() {
         players.forEach(player -> player.setInGame(true));
     }
-
-    public void setPrivateLobby(boolean privateLobby) {
-        this.privateLobby = privateLobby;
-    }
-
 
     @Override
     public String toString() {

@@ -1,10 +1,12 @@
 package view;
 
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -21,6 +23,8 @@ public class GameScene {
     private final HBox hbDeck;
     private final HBox hbCards;
     private final VBox vbGame;
+    private final ScrollPane spCards;
+
     private Scene scene;
 
     public GameScene() {
@@ -33,22 +37,26 @@ public class GameScene {
         btnDraw.setGraphic(ivBack);
         hbDeck = new HBox(20, ivCurrent, btnDraw);
         hbCards = new HBox(10);
-        vbGame = new VBox(10, lblUsername, lblCurrentPlayer, lblCards, hbDeck, hbCards);
+
+        spCards = new ScrollPane(hbCards);
+        spCards.setFitToHeight(true);
+        spCards.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+
+        vbGame = new VBox(10, lblUsername, lblCurrentPlayer, lblCards, hbDeck, spCards);
         root = new VBox(vbGame);
         initializeScene();
     }
 
     private void initializeScene() {
-        root.setId("game");
-        ivCurrent.setFitWidth(80);
-        ivCurrent.setFitHeight(150);
-        ivBack.setFitWidth(80);
-        ivBack.setFitHeight(150);
+        ViewUtil.setRootIdAndStyle(root, "game");
+        ivCurrent.setFitWidth(ViewUtil.IMAGE_VIEW_WIDTH);
+        ivCurrent.setFitHeight(ViewUtil.IMAGE_VIEW_HEIGHT);
+        ivBack.setFitWidth(ViewUtil.IMAGE_VIEW_WIDTH);
+        ivBack.setFitHeight(ViewUtil.IMAGE_VIEW_HEIGHT);
         vbGame.setAlignment(Pos.CENTER);
         hbDeck.setAlignment(Pos.CENTER);
-        root.setAlignment(Pos.CENTER);
 
-        scene = new Scene(root, 850, 600);
+        scene = new Scene(root, ViewUtil.WINDOW_WIDTH, ViewUtil.WINDOW_HEIGHT);
         scene.getStylesheets().add(getClass().getResource("css/style.css").toExternalForm());
     }
 
