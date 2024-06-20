@@ -9,8 +9,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Arrays;
 
+/**
+ * Client class responsible for handling the connection and communication with the server.
+ */
 public class Client extends Thread {
     private InetAddress address;
     private int port;
@@ -20,6 +22,11 @@ public class Client extends Thread {
     private String username;
     private ClientView clientView;
 
+    /**
+     * Constructor for the Client class.
+     *
+     * @param clientView the gui window associated with this client
+     */
     public Client(ClientView clientView) {
         try {
             this.port = Server.PORT;
@@ -33,14 +40,27 @@ public class Client extends Thread {
         }
     }
 
+    /**
+     * Returns the username of the client.
+     *
+     * @return the username of the client
+     */
     public String getUsername() {
         return username;
     }
 
+    /**
+     * Sets the username of the client.
+     *
+     * @param username the username to be set
+     */
     public void setUsername(String username) {
         this.username = username;
     }
 
+    /**
+     * The main method of the client thread. Reads responses from the server and handles them.
+     */
     @Override
     public void run() {
         try {
@@ -59,10 +79,20 @@ public class Client extends Thread {
         }
     }
 
-    public void sendRequest(String command) {
-        toServer.println(command);
+    /**
+     * Sends a request to the server.
+     *
+     * @param request the request to be sent
+     */
+    public void sendRequest(String request) {
+        toServer.println(request);
     }
 
+    /**
+     * Handles the response received from the server.
+     *
+     * @param response the response from the server
+     */
     private void handleResponse(String response) {
         String[] parts = response.split(" ", 3);
 
@@ -88,6 +118,9 @@ public class Client extends Thread {
             case "INVITE":
                 clientView.showInviteAlert(parts[1], parts[2]);
                 break;
+            case "LEAVE":
+                clientView.setStartScene();
+                break;
             case "START":
                 clientView.setGameScene();
                 break;
@@ -101,7 +134,7 @@ public class Client extends Thread {
                 clientView.disableCards();
                 break;
             case "UNBLOCK":
-                clientView.enableCards(response);
+                clientView.enableCards(parts[2]);
                 break;
             case "GAME_INFO":
                 clientView.showGameInfo(parts[1], parts[2]);
@@ -115,9 +148,6 @@ public class Client extends Thread {
             case "FINISH":
                 clientView.showFinishAlert(parts[2]);
                 break;
-            case "LEAVE_LOBBY":
-                clientView.setStartScene();
-                break;
             case "ADMIN":
                 clientView.setAdminLobbyScene(parts[1], true);
                 break;
@@ -130,6 +160,9 @@ public class Client extends Thread {
         }
     }
 
+    /**
+     * Closes the socket and streams associated with the client.
+     */
     private void close() {
         try {
             socket.close();

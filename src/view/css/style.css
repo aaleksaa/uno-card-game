@@ -1,20 +1,15 @@
-#root {
+#connect {
     -fx-background-image: url("file:images/background.jpg");
     -fx-background-size: cover;
 }
 
-#game {
-    -fx-background-image: url("file:images/background1.jpg");
-    -fx-background-size: cover;
-}
-
-#vb-connect Text {
+#connect Label {
     -fx-font-weight: bold;
     -fx-font-size: 30px;
-    -fx-fill: #FFFFFF;
+    -fx-text-fill: #FFFFFF;
 }
 
-#vb-connect TextField {
+#connect TextField {
     -fx-padding: 5px;
     -fx-background-color: transparent;
     -fx-border-width: 0 0 2 0;
@@ -25,17 +20,13 @@
     -fx-prompt-text-fill: #FFFFFF;
 }
 
-#vb-connect Button {
+#connect Button {
     -fx-padding: 5px 15px 5px 15px;
     -fx-font-size: 18px;
     -fx-background-color: transparent;
     -fx-text-fill: #FFFFFF;
     -fx-border-color: #FFFFFF;
     -fx-border-width: 2;
-}
-
-Button:hover {
-    -fx-cursor: hand;
 }
 
 #start {
@@ -61,22 +52,31 @@ Button:hover {
     -fx-text-fill: #000000;
 }
 
-#lblMessage {
+#game {
+    -fx-background-image: url("file:images/background1.jpg");
+    -fx-background-size: cover;
+}
+
+#game Label {
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+Button:hover {
+    -fx-cursor: hand;
+}
+
+#lbl1 {
     -fx-text-fill: #461B4A;
     -fx-font-weight: bold;
     -fx-font-size: 16px;
 }
 
-#lblLobby {
+#lbl2 {
     -fx-text-fill: #F7B32B;
     -fx-font-weight: bold;
     -fx-font-size: 18px;
-}
-
-#error {
-    -fx-text-fill: red;
-    -fx-font-weight: 600;
-    -fx-font-size: 14px;
 }
 
 .list-view {
@@ -109,41 +109,6 @@ Button:hover {
 
 .list-view:focused .list-cell:selected {
     -fx-background-color: #F7B32B;
-}
-
-.scroll-bar:vertical {
-    -fx-background-color: #ecf0f1;
-}
-
-.scroll-bar:horizontal {
-    -fx-background-color: #ecf0f1;
-}
-
-.scroll-bar .thumb {
-    -fx-background-color: #F7B32B;
-}
-
-.scroll-bar .increment-button, .scroll-bar .decrement-button {
-    -fx-background-color: #bdc3c7;
-}
-
-.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
-    -fx-background-color: #ffffff;
-    -fx-shape: "M0,0 L5,5 L10,0 Z";
-}
-
-#game Button {
-    -fx-transition: all 0.3s ease;
-}
-
-#game Button:hover {
-    -fx-translate-y: -10px;
-}
-
-#game Label {
-    -fx-text-fill: #FFFFFF;
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
 }
 
 .scroll-pane {
