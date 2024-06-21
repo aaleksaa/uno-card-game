@@ -346,9 +346,11 @@ public class ClientThread extends Thread {
             server.broadcastToAll(this, "Lobby " + lobby.getLobbyName() + " is removed!");
         } else {
             if (lobby.getAdmin().equals(this)) {
+                setReady(false);
                 lobby.setNewAdmin();
                 lobby.getAdmin().setReady(true);
                 lobby.getAdmin().sendResponse("ADMIN " + lobby.getLobbyName());
+                lobby.getAdmin().sendResponse("ADD PLAYER " + server.getPlayersInLobby(lobby.getAdmin(), lobby));
                 server.broadcastToLobby(lobby.getAdmin(), lobby, lobby.getAdmin().getUsername() + " is new admin!");
             }
         }
