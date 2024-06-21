@@ -338,6 +338,7 @@ public class ClientThread extends Thread {
         sendResponse("LEAVE");
         server.broadcastToLobby(this, lobby, username + " left lobby!");
         server.broadcastToLobby(this, lobby, "REMOVE PLAYER " + username);
+        setReady(false);
 
         if (lobby.isEmpty()) {
             server.removeLobby(lobby);
@@ -346,7 +347,6 @@ public class ClientThread extends Thread {
             server.broadcastToAll(this, "Lobby " + lobby.getLobbyName() + " is removed!");
         } else {
             if (lobby.getAdmin().equals(this)) {
-                setReady(false);
                 lobby.setNewAdmin();
                 lobby.getAdmin().setReady(true);
                 lobby.getAdmin().sendResponse("ADMIN " + lobby.getLobbyName());
@@ -368,7 +368,7 @@ public class ClientThread extends Thread {
         else {
             server.broadcastInGame(lobby, "START");
             lobby.start();
-            lobby.setPlayersInGame();
+            lobby.setPlayersInGame(true);
         }
     }
 
@@ -410,7 +410,7 @@ public class ClientThread extends Thread {
         sendResponse("DISCONNECT");
 
         if (lobby != null) {
-            lobby.removePlayer(this);
+            handleLeaveLobby();
             if (isInGame()) {
                 lobby.getUno().removePlayer(this);
                 lobby.getUno().returnCardsFromDisconnectedPlayer(deck.getCards());

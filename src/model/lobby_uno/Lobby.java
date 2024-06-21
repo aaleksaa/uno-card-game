@@ -177,8 +177,8 @@ public class Lobby {
     /**
      * Sets all players in the lobby to in-game status.
      */
-    public void setPlayersInGame() {
-        players.forEach(player -> player.setInGame(true));
+    public void setPlayersInGame(boolean inGame) {
+        players.forEach(player -> player.setInGame(inGame));
     }
 
     /**
